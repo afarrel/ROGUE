@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+.collapsible {
+  background-color: #787;
+  color: white;
+  cursor: pointer;
+  padding: 9px;
+  width: 100%;
+  border: 2px solid black;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+}
+
+.collapsible:hover {
+  background-color: #666;
+}
+
+.content {
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #ffffff;
+  border: 3px solid black;
+}
+
+.module2 {
+  background-color: lightgrey;
+  width: 300px;
+  border: 10px solid green;
+  padding: 50px;
+  margin: 20px;
+}
+h1{
+    width:30px;
+    margin-top:-85px;
+    margin-left:5px;
+    background:green;
+    
+}
+.module-border-wrap {
+  max-width: 99%;
+  padding: 1rem;
+  position: relative;
+  background: linear-gradient(to right, white, lightseagreen, violet, white);
+  padding: 3px;
+}
+
+.module {
+  background: #222;
+  color: white;
+  padding: 2rem;
+}
+</style>
+</head>
+<body>
+
+
+<button class="collapsible">About ROGUE:</button>
+<div class="module-border-wrap">
+<p>
+ROGUE (RNAseq & Ontology Graphic User Environment) is a user-friendly R Shiny application that allows a biologist to perform differentially expressed gene analysis, gene ontology and pathway enrichment analysis, potential biomarker identification, and advanced statistical analyses. ROGUE has two major modules, (1) <b>RNAseq DEG</b>, an RNAseq basic analysis tool and (2) <b>RNAseq Explorer</b>, a gene ontology + clustering tool. 
+<br>
+<br>
+User-friendly tools for the advanced analyses of NGS data, such as ROGUE, will allow biologists to efficiently explore their datasets, discover expression patterns, and perform basic RNAseq analyses within this webapp.
+
+</p>
+</div>
+
+<script>
+var coll = document.getElementsByClassName("collapsible");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+  coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+      content.style.display = "none";
+    } else {
+      content.style.display = "block";
+    }
+  });
+}
+</script>
+
+</body>
+</html>
+
