@@ -31,6 +31,8 @@ Note: This Rshiny app is written to be executed on UNIX and Linux. It will need 
 	a) Rscript [PATH_TO_MAIN_ROGUE_DIRECTORY]/Install_Packages.R
 
 	b) (Alternatively you can load the 'Install_Packages.R' in RStudio and install packages one by one).
+	
+		Rscript ~/Downloads/ROGUE-main/Install_Packages.R
 
 # 5. Run ROGUE
 1.	Rscript -e "shiny::runApp('[PATH_TO_MAIN_ROGUE_DIRECTORY]',launch.browser=TRUE)"
