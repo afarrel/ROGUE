@@ -3,14 +3,20 @@ RNAseq &amp; Ontology Graphic User Environment
 
 ROGUE (RNA-seq Ontology Graphic User Environment), is an R Shiny application that allows biologists to perform differentially expressed gene analysis, gene ontology and pathway enrichment analysis, potential biomarker identification, and advanced statistical analyses. 
 
-# 1. Download Code
+
+# 1. Download and Install R
+https://www.r-project.org/
+
+Note: This code is written and can be used on UNIX and Linux. It will need to be modified to be executed on Windows.
+
+# 2. Download Code
 1. Click on download Code button.
 
 2. Click 'Download ZIP'.
 
 3. Unzip ROGUE-main.zip.
 
-# 2. Untar Gene Ontology Data
+# 3. Untar Gene Ontology Data
 1. tar -zxf [PATH_TO_MAIN_ROGUE_DIRECTORY]/Data/Homo_Sapien.tar.gz --directory [PATH_TO_MAIN_ROGUE_DIRECTORY]/ROGUE-main/Data
 
 	a) Example: (If the folder is in your Home directory's download folder)
@@ -18,7 +24,7 @@ ROGUE (RNA-seq Ontology Graphic User Environment), is an R Shiny application tha
 		tar -zxf ~/Downloads/ROGUE-main/Data/Homo_Sapien.tar.gz --directory  ~/Downloads/ROGUE-main/Data
 
 
-# 3. Install Necessary Packages
+# 4. Install Necessary Packages
 
 1. Run the file 'Install_Packages.R'
 
@@ -26,7 +32,7 @@ ROGUE (RNA-seq Ontology Graphic User Environment), is an R Shiny application tha
 
 	b) (Alternatively you can load the 'Install_Packages.R' in RStudio and install packages one by one).
 
-# 4. Run ROGUE
+# 5. Run ROGUE
 1.	Rscript -e "shiny::runApp('[PATH_TO_MAIN_ROGUE_DIRECTORY]',launch.browser=TRUE)"
 
 	a)	Example: (If the folder is in your Home directory's download folder)
