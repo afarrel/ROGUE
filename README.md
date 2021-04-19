@@ -7,7 +7,7 @@ ROGUE (RNA-seq Ontology Graphic User Environment), is an R Shiny application tha
 # 1. Download and Install R
 https://www.r-project.org/
 
-Note: This code is written and can be used on UNIX and Linux. It will need to be modified to be executed on Windows.
+Note: This Rshiny app is written to be executed on UNIX and Linux. It will need to be modified to be executed on Windows.
 
 # 2. Download Code
 1. Click on download Code button.
