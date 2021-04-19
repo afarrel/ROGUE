@@ -18,7 +18,6 @@ library(pheatmap)
 library(plotly)
 library(edgeR)
 library(RColorBrewer)
-library(MASS)
 library(ggplot2)
 library(dplyr)
 library(heatmaply)
@@ -159,7 +158,7 @@ sidebar <- dashboardSidebar(
 
 fluidRow(column(width=8,shiny::actionButton(inputId='ab1', label="View ROGUE Manual",
                        icon = icon("th"),style="color: #B2C8DB; background-color: #576570; border-color: #B2C8DB; padding:1px;",
-                          onclick ="window.open('http://reslnmaris01.research.chop.edu/ROGUE/Instructions.pdf', '_blank')")),column(width=2,actionButton("ROGUE_help", "", icon = icon("question"),class = "btn-xs", title = "Get Started"))),
+                          onclick ="window.open('Instructions.pdf', '_blank')")),column(width=2,actionButton("ROGUE_help", "", icon = icon("question"),class = "btn-xs", title = "Get Started"))),
 				hr(),
 				sidebarMenu(id="TABS",
 					menuItem("ROGUE", tabName="rogue",icon=icon("line-chart"),selected=TRUE),
