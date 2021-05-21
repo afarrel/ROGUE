@@ -19,9 +19,13 @@ install.packages("grid")
 install.packages("cowplot")
 install.packages("reshape2")
 install.packages("rintrojs")
+install.packages("uwot")
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 
 BiocManager::install("edgeR")
 BiocManager::install("fgsea")
+BiocManager::install("DESeq2")
+
+
