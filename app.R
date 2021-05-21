@@ -31,7 +31,8 @@ library(cowplot)
 library(fgsea)
 library(reshape2)
 library(rintrojs)
-
+library(DESeq2)
+library(uwot)
 
 options(shiny.maxRequestSize=50*1024^2)  # Limits file upload size to 50 MB
 
@@ -154,18 +155,18 @@ GENE_Symbol_Ensembl = read.delim("Data/GSEA/bioDBnet_db2db.txt")
 ### End of Gene Enrichment Data GSEA ####
 #########################################
 
-sidebar <- dashboardSidebar(
+sidebar <- dashboardSidebar(width = 250,
 
 fluidRow(column(width=8,shiny::actionButton(inputId='ab1', label="View ROGUE Manual",
                        icon = icon("th"),style="color: #B2C8DB; background-color: #576570; border-color: #B2C8DB; padding:1px;",
                           onclick ="window.open('Instructions.pdf', '_blank')")),column(width=2,actionButton("ROGUE_help", "", icon = icon("question"),class = "btn-xs", title = "Get Started"))),
 				hr(),
-				sidebarMenu(id="TABS",
+				sidebarMenu(id="TABS",width=5,
 					menuItem("ROGUE", tabName="rogue",icon=icon("line-chart"),selected=TRUE),
-					menuItem("Load Count Data:(EdgeR)", tabName="Count_EdgeR_Data", icon=icon("line-chart")),
+					menuItem("Load Count Data:(EdgeR/DEseq2)", tabName="Count_EdgeR_Data", icon=icon("line-chart")),
 					menuItem("Load Expression Data", tabName="Expression_Data",  icon=icon("line-chart")),				
 					menuItem("Create Groups", tabName="Create_Groups",  icon=icon("line-chart")),
-					menuItem("EdgeR Group Comparison", tabName="Groups_CountData", icon=icon("line-chart")),
+					menuItem("EdgeR/DEseq2 Group Comparison", tabName="Groups_CountData", icon=icon("line-chart")),
 					menuItem("Gene Comparison (Samples)", tabName="Sample_Comparison", icon=icon("line-chart")),
 					menuItem("Gene Comparison (Groups)", tabName="Group_Comparison",  icon=icon("line-chart")),
 					menuItem("Advanced Analysis",   icon=icon("line-chart"),
@@ -269,6 +270,7 @@ body <- dashboardBody(introjsUI(),
                      #tags$hr(),
                      #checkboxInput("header", "Header", TRUE),
                      h5(id = "h4Comparison",selectInput(inputId="Comparison", label="Select 2 Samples", c("No Samples Loaded"), multiple = T)),
+                     h5(id = "h4EdgeR_DEseq",radioButtons(inputId="Reads.EdgeR_DEseq",label = "Select Method",choices = c("EdgeR"="EdgeR","DESeq2"="DESeq2"),selected = "EdgeR",inline = T)),
                      h5(id = "h4CompareButton",actionButton(inputId="CompareButton", label="Compare Samples")),
                      h5(id = "h4Log2FCThreshold",textInput(inputId="Log2FCThreshold", label="Log2FC", value = "1", width = '60px', placeholder = NULL)),
                      h5(id = "h4FDRPvalThreshold",textInput(inputId="FDR_PvalThreshold", label="P-value", value = "0.05", width = '60px', placeholder = NULL)),
@@ -736,15 +738,16 @@ body <- dashboardBody(introjsUI(),
                                        ),#tabPanel("Group_Stats_GeneList"
 							##########################################
 							##########################################
-                                       tabPanel("t_SNE",
+                                       tabPanel("PCA_tSNE_UMAP",
                                            fluidRow(
     			 					          box(
      	 												title = p(actionButton("t_SNE_help", "", icon = icon("question"),
-                  										class = "btn-xs", title = "Help"),"t-SNE tool"                
+                  										class = "btn-xs", title = "Help"),"Dimension Reduction Tool"                
      	 												),#title = p( 
      	 											 width = 12, solidHeader = TRUE, 
       												uiOutput("boxContent_T_SNE"),
 
+												h5(id = "h4GroupStatsSelectMethod", radioButtons(inputId = "Group_Stats_Select_Method",label = "Select Dimension Reduction Method",choices = c("tSNE"="tSNE","PCA"="PCA","UMAP"="UMAP"),inline = T,selected = "tSNE")),
                                                 h5(id = "h4GroupStatsRunTSNE", actionButton(inputId = "Group_Stats_Run_tSNE",label = "Run t-SNE")),
 												h5(id = "h4SelectTSNEObject", radioButtons(inputId = "Select_tSNE_Object",label = "Select t-SNE Analysis",choices = c("All Samples"="SAMPLES","Genes"="GENES"),selected = "SAMPLES")),
                                                 fluidRow(column(width=4,h5(id = "h4GroupStatsTSNEMaxIter", sliderInput(inputId = "Group_Stats_tSNE_max_iter",label="Choose t-SNE max iterations", min = 100, max = 1000, value = 1000, step = 100)))),
@@ -1100,7 +1103,7 @@ server <- function(input,output,session,DATA.Values,DATA.Values.5min=c(),Groups,
   })#observeEvent(input$Group_Stats_Summary_plots_help,{	
 
  observeEvent(input$t_SNE_help,{
-  if (input$TABS == "Group_Stats_Comparison" & input$Group_Stats_Comparison_Panels == "t_SNE") {   
+  if (input$TABS == "Group_Stats_Comparison" & input$Group_Stats_Comparison_Panels == "PCA_tSNE_UMAP") {   
       rintrojs::introjs(session, options = list(
         steps = data.frame(element = c("#h4SelectTSNEObject", "#h4GroupStatsTSNEMaxIter","#h4GroupStatsRunTSNE", "#h4GroupStatsTSNESeed", "#h4GroupStatsTSNEPointSize", "#h4GenerateTSNEList", "#h4GroupStatsTSNEGeneList", "#h4GroupStatsTSNEGene","#h4GroupStatsTSNEGroup"),
                            intro = c("Select whether to perform t-SNE on samples based on gene expression or genes based on expression pattern among samples.",
@@ -1114,7 +1117,7 @@ server <- function(input,output,session,DATA.Values,DATA.Values.5min=c(),Groups,
 					    		     "This option allows the highlighting of all samples that belong to a selected defined group."					    		     		                                       
                                    ))#steps = data.frame(element = c(
       ))#rintrojs::introjs(session, options = list(
-    }#else if (input$tabs == "Group_Stats_Comparison" & input$Group_Stats_Comparison_Panels == "t_SNE") {  
+    }#else if (input$tabs == "Group_Stats_Comparison" & input$Group_Stats_Comparison_Panels == "PCA_tSNE_UMAP") {  
   })#observeEvent(input$t_SNE_help,{	
 
   
@@ -3542,6 +3545,9 @@ Gene.Table.Data = paste(paste(colnames(pengRPKMTable),collapse="\t"),Gene.Table.
      
      #updateTextAreaInput(session,inputId="Gene_Table", label = paste("Gene Table"), value = Gene.Table.Data)
      #updateTextAreaInput(session,inputId="FPKM_Table", label = paste("Reads Table"), value = Reads.Table.Data)
+
+     updateTextAreaInput(session,inputId="Gene_Table", label = paste("Gene Table"), value = gsub("\t",",",Gene.Table.Data))	
+     updateTextAreaInput(session,inputId="FPKM_Table", label = paste("Reads Table"), value = Gene.Table.Data)
      updateSelectizeInput(session, inputId="Comparison", label = "Select Library", choices = experimentGroup)
      
      #ALL_Genes_List =  rownames(pengRPKMTable)
@@ -3703,6 +3709,8 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
        #}
        
        #if(input$FPKM_Table)
+       
+      
        if(length(input$Comparison)>1){
          
          
@@ -3710,46 +3718,15 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
          Sample1 = input$Comparison[1]
          Sample2 = input$Comparison[2]
          
-         xLabel <- "logCPM"
-         
-         yLabel <- paste("log2(",Sample2," RPKM / ",Sample1," RPKM)",sep="")
-         
-         #readData = read.table(text=gsub("(?<=[a-z])\\s+", "\n", input$FPKM_Table, perl=TRUE),header=T,sep=",")
-         
-         #pengRPKMTable = read.table(text=gsub("(?<=[a-z])\\s+", "\n", input$Gene_Table, perl=TRUE), header=T,sep=",")
-         
-         experimentGroup = colnames(readData)
-         rownames(readData) = make.unique(as.character(pengRPKMTable[,2]))
-         rownames(pengRPKMTable) = make.unique(as.character(pengRPKMTable[,2]))
-         readData <- DGEList(counts = readData, group = colnames(readData))
-         readData <- estimateGLMCommonDisp(readData, method = "deviance", robust = TRUE, subset = NULL)
-         dataDispersion <- readData$common.dispersion^2
-         
-         
-         #readData=readData[,2:ncol(readData)]
-         #rownames(pengRPKMTable) = pengRPKMTable[1,]
-         
-         #pengRPKMTable = pengRPKMTable[2:nrow(pengRPKMTable),]
-         #readData = readData[2:nrow(readData),]
-         #Naive.WT.Media vs mem.WT.media.aCD3
-         experimentPair <- c(Sample1,Sample2) #choose a pair of experiments to compare
-         
-         comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
-         
-         comparisonTable <- comparison$table #rename the variable within comparison so RStudio won't complain all the time
-         
          thresholdRatio <- as.numeric(input$Log2FCThreshold)
-         
-         mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", FDR <",as.numeric(as.matrix(input$FDR_PvalThreshold)) ,")") #set up a title for graphs
-         
-         numGenes <- sum(abs(decideTestsDGE(comparison,adjust.method = input$Pval_Correction, p.value = input$FDR_PvalThreshold))) # number of genes with significant differential expression
-
-                 
-         if (numGenes > 0) { #check to make sure there is any differential expression
-           
-           
-           
-           
+		 experimentGroup = colnames(readData)
+		 rownames(readData) = make.unique(as.character(pengRPKMTable[,2]))
+         rownames(pengRPKMTable) = make.unique(as.character(pengRPKMTable[,2]))
+		 
+		 xLabel <- "logCPM"       
+         yLabel <- paste("log2(",Sample2," RPKM / ",Sample1," RPKM)",sep="")
+      
+      
            MIN.dim = min(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
            MAX.dim = max(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
            
@@ -3780,12 +3757,58 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
               
              
            })#output$ComparePlot1 <- renderPlot({
+         
+       if(input$Reads.EdgeR_DEseq == "EdgeR")
+       { 
            
+         #readData = read.table(text=gsub("(?<=[a-z])\\s+", "\n", input$FPKM_Table, perl=TRUE),header=T,sep=",")
+         
+         #pengRPKMTable = read.table(text=gsub("(?<=[a-z])\\s+", "\n", input$Gene_Table, perl=TRUE), header=T,sep=",")
+         
+         experimentGroup = colnames(readData)
+         rownames(readData) = make.unique(as.character(pengRPKMTable[,2]))
+         rownames(pengRPKMTable) = make.unique(as.character(pengRPKMTable[,2]))
+         readData <- DGEList(counts = readData, group = colnames(readData))
+         readData <- estimateGLMCommonDisp(readData, method = "deviance", robust = TRUE, subset = NULL)
+         dataDispersion <- readData$common.dispersion^2
+         
+         
+         #readData=readData[,2:ncol(readData)]
+         #rownames(pengRPKMTable) = pengRPKMTable[1,]
+         
+         #pengRPKMTable = pengRPKMTable[2:nrow(pengRPKMTable),]
+         #readData = readData[2:nrow(readData),]
+         #Naive.WT.Media vs mem.WT.media.aCD3
+         experimentPair <- c(Sample1,Sample2) #choose a pair of experiments to compare
+         
+         comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
+         
+         print(comparison[1:9,])
+         
+         comparisonTable <- comparison$table #rename the variable within comparison so RStudio won't complain all the time
+         
+                 
+         mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", FDR <",as.numeric(as.matrix(input$FDR_PvalThreshold)) ,")") #set up a title for graphs
+         
+         numGenes <- sum(abs(decideTestsDGE(comparison,adjust.method = input$Pval_Correction, p.value = input$FDR_PvalThreshold))) # number of genes with significant differential expression
+
+                 
+         if (numGenes > 0) { #check to make sure there is any differential expression
+           
+           
+           
+           
+ 
+           
+           
+         
            topGenes <- topTags(comparison, n = numGenes) #top genes
            
            allGenes <- topTags(comparison, n = nrow(comparisonTable)) #all genes
            
            topGenesTable <- topGenes$table[topGenes$table$logCPM > 1,] #filter top genes for logCPM > 1, keep original variable intact
+           
+           #print(topGenesTable[1:4,])
            
            allGenesTable <- allGenes$table #rename for ease
            
@@ -3807,11 +3830,114 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            
            evenExpression <- setdiff(comparedAllGenes, FC2_table) #make a table of evenly expressed genes
            
+           print(allGenesTable[1:3,])
+           print(FC2_table[1:5,])
+           print(comparedAllGenes[1:3,])
+           print(evenExpression[1:5,])
+           
            #write.table(evenExpression, file = paste(Directory,Sample1,".vs.",Sample2,".evenExpression.txt",sep=""), sep = "\t", quote = FALSE, row.names = FALSE) #make a file
 
 	   updateSliderInput(session = session,inputId = "Reads.Volcano_Genes",label = "Show Volcano Plot Genes",min = 0,max = nrow(FC2_table) ,value = ifelse(input$Reads.Volcano_Genes < nrow(FC2_table),input$Reads.Volcano_Genes,nrow(FC2_table)))
-             
+	   
+	       }#if (numGenes > 0) { 
+	      }#if(input$Reads.EdgeR_DEseq == "EdgeR")
+      ########################################
+      #########################
+      if(input$Reads.EdgeR_DEseq == "DESeq2")
+      {
+      	 print("CHECK0_begin")
+      	counts <- readData$counts
+      	print(counts[1:4,1:3])
+		# converting column gene symbols to rownames
+		#rownames(counts) <-  counts[,1]
+		#counts$gene_name <-  NULL
+		
+		 print("CHECK0_still_going")
+		
+         Sample1 = input$Comparison[1]
+         Sample2 = input$Comparison[2]
+         
+         experimentPair <- c(Sample1,Sample2) #choose a pair of experiments to compare
+         print("CHECK0Z")
 
+         comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
+         comparisonTable <- comparison$table #rename the variable within comparison so RStudio won't complain all the time               
+         mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", FDR <",as.numeric(as.matrix(input$FDR_PvalThreshold)) ,")") #set up a title for graphs        
+         numGenes <- sum(abs(decideTestsDGE(comparison,adjust.method = input$Pval_Correction, p.value = input$FDR_PvalThreshold))) # number of genes with significant differential expression
+
+
+         print("CHECK0A")
+        coldata_test = data.frame(Treatment = rep(c(Sample1, Sample2),each=2),Samples = rep(c(Sample1, Sample2),each=2))
+		rownames(coldata_test) = make.unique(rep(c(Sample1, Sample2),each=2))
+
+		print("CHECK0A1")
+		counts_Compare = counts[,which(colnames(counts) %in% c(Sample1, Sample2))]
+		print(counts_Compare[1:3,1:2])
+		counts_Compare = counts_Compare[,c(1,1,2,2)]
+		counts_Compare[,c(2,4)] <- counts_Compare[,c(2,4)]+1
+	
+	    print("CHECK0A2") 
+		dds <- DESeqDataSetFromMatrix(countData = counts_Compare,
+    		                          colData = coldata_test,
+    		                          design = ~Treatment)
+		# pre-filtering Step: remove rows with 0 reads
+		
+		print("CHECK0A3")
+		dds <- dds[ rowSums(counts(dds)) > 0, ]
+
+         print("CHECK0B")
+
+		dds$Treatment <- relevel(dds$Treatment, ref=c(Sample1, Sample2)[1])
+		dds$Treatment <- factor(dds$Treatment, levels=c(Sample1, Sample2))
+		dds <- DESeq(dds)
+		res <- results(dds)
+		resOrdered <- res[order(res$padj),]
+
+		DEG_Results = results(dds, name = resultsNames(dds)[2])
+
+		
+		
+		#print(cpm[1:10,])
+
+		evenExpression <- data.frame(logFC = DEG_Results$log2FoldChange, PValue = DEG_Results$pvalue, FDR = p.adjust(DEG_Results$padj,method = input$Pval_Correction))
+        rownames(evenExpression) = rownames(DEG_Results)
+       
+        numGenes <- sum(abs(decideTestsDGE(comparison,adjust.method = input$Pval_Correction, p.value = input$FDR_PvalThreshold))) # number of genes with significant differential expression
+        
+        cpm <- DEG_Results$baseMean/sum(DEG_Results$baseMean)*1000000
+        
+        comparisonTable = data.frame(logFC = DEG_Results$log2FoldChange, logCPM = log2(cpm), PValue = DEG_Results$pvalue, FDR = p.adjust(DEG_Results$padj,method = input$Pval_Correction))
+        rownames(comparisonTable) = rownames(DEG_Results)
+
+        
+        topGenesTable = comparisonTable
+                
+        comparedAllGenes <- data.frame(pengRPKMTable[rownames(comparisonTable),],comparison[rownames(comparisonTable),]) #make a table of FC2 genes with their expression ratio
+        rownames(comparedAllGenes) = rownames(comparisonTable)
+
+        FC2 <- rownames(comparedAllGenes[abs(comparedAllGenes$logFC) > (thresholdRatio),]) #FC2 = rownames of fold change # greater than log2 threshold ratio
+        
+                
+        FC2_table <- data.frame(pengRPKMTable[FC2,], comparisonTable[FC2,]) #make a table of FC2 genes with their expression ratio
+        
+        evenExpression <- setdiff(comparedAllGenes, FC2_table) #make a table of evenly expressed genes
+
+
+		FC2_table <- FC2_table[order(abs(FC2_table$logFC),decreasing=T),]
+
+
+        topGenesTable <- topGenesTable[which(topGenesTable$logCPM > 1),]
+
+
+		#evenExpression = FC2_table
+
+      	 updateSliderInput(session = session,inputId = "Reads.Volcano_Genes",label = "Show Volcano Plot Genes",min = 0,max = nrow(FC2_table) ,value = ifelse(input$Reads.Volcano_Genes < nrow(FC2_table),input$Reads.Volcano_Genes,nrow(FC2_table)))
+      	 
+      }#if(input$Reads.EdgeR_DEseq == "DESeq2")
+      #####################       
+
+          if (numGenes > 0) { 
+          	
     #     output$ComparePlot2 = renderPlot({
 
             Volc.Reads <- ggplot(xlab = paste("log2FC (",Sample2,"/",Sample1,")",sep=""), ylab = "-log10(p-value)")+
@@ -3820,7 +3946,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
              theme(plot.title = element_text(hjust = .8, size = 15))+ #center title and make it bigger
              geom_point(data = evenExpression, aes(x = logFC, y= -log10(PValue + 1e-300)), alpha = 1/150)+ #plot the even expression points
              geom_point(data = FC2_table, aes(x = logFC, y = -log10(PValue + 1e-300)), color = "darkblue", alpha = 2/5)+ #plot the differentially expressed points
-             geom_vline(xintercept = c(-log2(thresholdRatio), log2(thresholdRatio)), color = "forestgreen")+ #plot the vertical boundary lines
+             geom_vline(xintercept = c(-(thresholdRatio),(thresholdRatio)), color = "forestgreen")+ #plot the vertical boundary lines
              geom_text(data = FC2_table[1:ifelse(input$Reads.Volcano_Genes < nrow(FC2_table),input$Reads.Volcano_Genes,nrow(FC2_table)),], aes(x = logFC, y = -log10(PValue + 1e-300)), label = rownames(FC2_table)[1:ifelse(input$Reads.Volcano_Genes < nrow(FC2_table),input$Reads.Volcano_Genes,nrow(FC2_table))], color = "firebrick", size = input$Reads.Volcano_Font_Size, nudge_y = -0.2) #label the diff. expr. points
 #p1= ggplot(xlab = paste("log2FC (",Sample2,"/",Sample1,")",sep=""), ylab = "-log10(p-value)")+
 #               ggtitle(mainTitle)+ #put in the title
@@ -3847,29 +3973,52 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            
            yLabel <- paste("log2(",Sample2," RPKM / ",Sample1," RPKM)",sep="") #change the y label
            
-           up <- nrow(topGenesTable[topGenesTable$logFC > log2(thresholdRatio),]) #number of rows of upregulated genes
+           up <- nrow(topGenesTable[which(comparisonTable$logFC > (thresholdRatio)  & comparisonTable$PValue <= input$FDR_PvalThreshold),]) #number of rows of upregulated genes
            
-           down <- nrow(topGenesTable[topGenesTable$logFC < -log2(thresholdRatio),]) #number of rows of downregulated genes
+           down <- nrow(topGenesTable[which(comparisonTable$logFC < -(thresholdRatio)  & comparisonTable$PValue <= input$FDR_PvalThreshold),]) #number of rows of downregulated genes
            
            #plot the compared genes, highlighting the differentially expressed ones
            #mirroring horizontal orange boundary lines
            #vertical grey boundary line
            #label the upregulation region of the graph
            #label the downregulation region of the graph
- 
+ 			    All_cols = rep("grey",length(comparisonTable$logFC))
+			    All_cols[which(abs(comparisonTable$logFC) >= thresholdRatio & comparisonTable$PValue <= input$FDR_PvalThreshold)] = "red"
+			    eigth = (max(comparisonTable$logFC)-min(comparisonTable$logFC))/8
+
+
            
-           output$ComparePlot3 = renderPlot({
-             {plotSmear(comparison, de.tags = rownames(topGenesTable), main = mainTitle, xlab = xLabel, ylab = yLabel, ylim = c(-5,5), col = "grey")
-               abline(h=c(-1, 1), col = rep("orange", 2))
-               abline(v=1, col = "grey")
-               text(8, 3, paste("upregulated=",up))
-               text(8, -3, paste("downregulated=",down))
-             }
-           })#output$ComparePlot3
+           
+             
+             #if(input$Reads.EdgeR_DEseq == "DESeq2")
+             {
+               output$ComparePlot3 = renderPlot({
+             	 Plot_smear_Plot = ggplot(comparisonTable, aes(x=logCPM, y=logFC)) + geom_point(col=All_cols)+
+  				 theme_bw()+
+  				 geom_hline(yintercept = thresholdRatio,col="orange")+
+  				 geom_hline(yintercept = -thresholdRatio,col="orange")+
+  				 geom_text(label=paste("downregulated=",down),x=min(comparisonTable$logCPM)+(max(comparisonTable$logCPM)-min(comparisonTable$logCPM))/2, y = min(comparisonTable$logFC)+eigth)+
+  				 geom_text(label=paste("upregulated=",up),x=min(comparisonTable$logCPM)+(max(comparisonTable$logCPM)-min(comparisonTable$logCPM))/2, y = max(comparisonTable$logFC)-eigth)+
+ 				 xlab(xLabel)+
+  				 ylab(yLabel)
+  				 Plot_smear_Plot
+  			  })#output$ComparePlot3
+             }#if(input$Reads.EdgeR_DEseq == "DESeq2")
+          #  if(input$Reads.EdgeR_DEseq == "EdgeR")             
+          #  {	
+          #    output$ComparePlot3 = renderPlot({
+          #     plotSmear(comparison, de.tags = rownames(topGenesTable), main = mainTitle, xlab = xLabel, ylab = yLabel, ylim = c(-5,5), col = "grey")
+          #     abline(h=c(-1, 1), col = rep("orange", 2))
+          #     abline(v=1, col = "grey")
+          #     text(8, 3, paste("upregulated=",up))
+          #     text(8, -3, paste("downregulated=",down))
+          #    })#output$ComparePlot3
+          #   }#if(input$Reads.EdgeR_DEseq == "EdgeR")
+          
            #grid.arrange(p1, p2, ncol = 2, nrow = 2)
 
   
-           
+           print("CHECK3")
            ## Heat Map
            
            FC2_table <- FC2_table[!duplicated(FC2_table$symbol),] #remove duplicated genes from table
@@ -3884,10 +4033,13 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            GeneList_Table_UP <-  pengRPKMTable[match(FC_Genes_UP,pengRPKMTable$symbol),]
            GeneList_Table_DOWN <-  pengRPKMTable[match(FC_Genes_DOWN,pengRPKMTable$symbol),]
        
-   
+   			
  
            
-           FC2_table <- FC2_table[,3:(length(experimentGroup)+2)]
+           #FC2_table <- FC2_table[,3:(length(experimentGroup)+2)]
+           
+           print("CHECK4")
+
 
 	  #Creates table with only two columns if user selects to show heatmap with only Compared columns           
 	  if(input$Reads.Heatmap_Samples == "Compared Samples")
@@ -4198,8 +4350,9 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
          ##################################
          ##################################
          ##################################
-       }
-       #})
+       }#if(length(input$Comparison)>1){
+       #})#
+   
        
      })#isolate
      
@@ -6312,7 +6465,8 @@ print("output$GO_Distribution ")
     Group_Stat.tSNE.Gene <- isolate(input$Group_Stats_tSNE_Gene)
     Group_Stats.tSNE.max.iter <- isolate(input$Group_Stats_tSNE_max_iter)
     
-    if(nchar(Group_Stat.Compare.1)>=1 & nchar(Group_Stat.Compare.2)>=1)
+    if(!is.null(nrow(DATA.Values.5min)))
+    if(nrow(DATA.Values.5min)>10)
     {
       Group.Index=c()
       Gene.Index=c()
@@ -6320,8 +6474,18 @@ print("output$GO_Distribution ")
       Group.Index[1] = which(Groups == Group_Stat.Compare.1)
       Group.Index[2] = which(Groups == Group_Stat.Compare.2)
       
-      Group.Member.index.1 = match(unlist(strsplit(Group.Members[Group.Index[1]],split=";")),as.character(unlist(colnames(DATA.Values.5min))))
-      Group.Member.index.2 = match(unlist(strsplit(Group.Members[Group.Index[2]],split=";")),as.character(unlist(colnames(DATA.Values.5min))))
+      
+      if(nchar(Group_Stat.Compare.1)>=1 & nchar(Group_Stat.Compare.2)>=1)
+      {
+       Group.Member.index.1 = match(unlist(strsplit(Group.Members[Group.Index[1]],split=";")),as.character(unlist(colnames(DATA.Values.5min))))
+       Group.Member.index.2 = match(unlist(strsplit(Group.Members[Group.Index[2]],split=";")),as.character(unlist(colnames(DATA.Values.5min))))
+      }
+      if(nchar(Group_Stat.Compare.1)<1 & nchar(Group_Stat.Compare.2)<1)
+      {
+       Group.Member.index.1 = 1:ncol(DATA.Values.5min)
+       Group.Member.index.2 = 1:ncol(DATA.Values.5min)
+      }
+      
       
       Control.Treatment.data = DATA.Values.5min[,c(Group.Member.index.1,Group.Member.index.2)]
       Group.1.data = DATA.Values.5min[,Group.Member.index.1]
@@ -6396,16 +6560,45 @@ print("output$GO_Distribution ")
         Sys.sleep(0.001)
     #########################################################    
         
-        #New.Data.Subset.tsne.3 = tsne(New.Data.Subset,k=3, max_iter = Group_Stats.tSNE.max.iter)
-        New.Data.Subset.tsne.3 = Rtsne(X= (New.Data.Subset),dim=3,perplexity=PERPLEX, max_iter= Group_Stats.tSNE.max.iter)$Y
-        
-    ##########################################################
-        progress$inc(0.25, detail = "Calculating 2D t-SNE")
-        Sys.sleep(0.001)
-    #########################################################
+        if(input$Group_Stats_Select_Method == "tSNE")
+        {
+          #New.Data.Subset.tsne.3 = tsne(New.Data.Subset,k=3, max_iter = Group_Stats.tSNE.max.iter)
+          New.Data.Subset.tsne.3 = Rtsne(X= (New.Data.Subset),dim=3,perplexity=PERPLEX, max_iter= Group_Stats.tSNE.max.iter)$Y
+          
+             ##########################################################
+            progress$inc(0.25, detail = "Calculating 2D t-SNE")
+            Sys.sleep(0.001)
+            ######################################################### 
+          
+          New.Data.Subset.tsne.2 = Rtsne(X= (New.Data.Subset),dim=2,perplexity=PERPLEX, max_iter= Group_Stats.tSNE.max.iter)$Y
+        }#if(input$Group_Stats_Select_Method == "tSNE")
+
+        if(input$Group_Stats_Select_Method == "PCA")
+        {
+          New.Data.Subset.tsne.3 = prcomp(New.Data.Subset)$x[,c(1:3)]
+          
+             ##########################################################
+            progress$inc(0.25, detail = "Calculating 2D PCA")
+            Sys.sleep(0.001)
+            ######################################################### 
+          
+           New.Data.Subset.tsne.2 = prcomp(New.Data.Subset)$x[,c(1:2)]
+           
+        }#if(input$Group_Stats_Select_Method == "tSNE")
+        if(input$Group_Stats_Select_Method == "UMAP")
+        {
+          New.Data.Subset.tsne.3 = umap(New.Data.Subset,n_components = 3,n_neighbors = (floor(nrow(New.Data.Subset)/2)+1))
+          
+             ##########################################################
+            progress$inc(0.25, detail = "Calculating 2D UMAP")
+            Sys.sleep(0.001)
+            ######################################################### 
+          
+           New.Data.Subset.tsne.2 = prcomp(New.Data.Subset)$x[,c(1:2)]
+        }#if(input$Group_Stats_Select_Method == "UMAP")
         
         #New.Data.Subset.tsne.2 = tsne(New.Data.Subset,k=2, max_iter = Group_Stats.tSNE.max.iter)
-        New.Data.Subset.tsne.2 = Rtsne(X= (New.Data.Subset),dim=2,perplexity=PERPLEX, max_iter= Group_Stats.tSNE.max.iter)$Y
+        New.Data.Subset.tsne.2 = umap(New.Data.Subset,n_components = 2,n_neighbors = (floor(nrow(New.Data.Subset)/2)+1))
 
     ##########################################################
         progress$inc(0.275, detail = "Something is Happening! Do you feel lucky?")
@@ -8138,5 +8331,5 @@ shinyApp(ui = dashboardPage(title= "ROGUE", dashboardHeader(tags$li(class = "dro
       tags$style(".main-header {max-height: 75px}"),
       tags$style(".main-header .logo {height: 75px}")
     ),
-title = tags$a(tags$img(src='ROGUE.png',align="left", width= "220", height="75", padding="0px"))),sidebar,body), server = server)
+title = tags$a(tags$img(src='ROGUE.png',align="left", width= "250", height="75", padding="0px")),titleWidth=250),sidebar,body), server = server)
 
