@@ -3,6 +3,39 @@ RNAseq &amp; Ontology Graphic User Environment
 
 ROGUE (RNA-seq Ontology Graphic User Environment), is an R Shiny application that allows biologists to perform differentially expressed gene analysis, gene ontology and pathway enrichment analysis, potential biomarker identification, and advanced statistical analyses. 
 
+**Notes:**
+
+This app was written and tested in **R version 3.6**.
+
+The below packages are required:
+
+* shiny 
+* shinydashboard
+* shinyWidgets
+* shinyjs
+* markdown
+* MASS
+* pheatmap
+* plotly
+* edgeR
+* RColorBrewer
+* ggplot2
+* dplyr
+* heatmaply
+* gridExtra
+* gtools
+* colourpicker
+* Rtsne
+* scatterplot3d
+* grid
+* cowplot
+* fgsea
+* reshape2
+* rintrojs
+* DESeq2
+* uwot
+
+
 
 # 1. Download and Install R
 https://www.r-project.org/
