@@ -9,38 +9,22 @@ This app was written and tested in **R version 3.6**.
 
 The below packages are required:
 
-* shiny 
-* shinydashboard
-* shinyWidgets
-* shinyjs
-* markdown
-* MASS
-* pheatmap
-* plotly
-* edgeR
-* RColorBrewer
-* ggplot2
-* dplyr
-* heatmaply
-* gridExtra
-* gtools
-* colourpicker
-* Rtsne
-* scatterplot3d
-* grid
-* cowplot
-* fgsea
-* reshape2
-* rintrojs
-* DESeq2
-* uwot
+|          |              |            |       |        |
+|----------|--------------|------------|-------|--------|
+|shiny     |shinydashboard|shinyWidgets|shinyjs|markdown|
+| edgeR |MASS|pheatmap|plotly|heatmaply|
+| RColorBrewer|ggplot2|dplyr|Rtsne|scatterplot3d|
+|gridExtra|gtools|colourpicker|grid|cowplot|
+|fgsea  |reshape2|rintrojs|DESeq2|uwot|
+
+
 
 
 
 # 1. Download and Install R
 https://www.r-project.org/
 
-Note: This Rshiny app is written to be executed on UNIX and Linux. It will need to be modified to be executed on Windows.
+Note: This Rshiny app is written to be executed on UNIX and Linux. The application will need to be modified to be executed on Windows.
 
 # 2. Download Code
 1. Click on download Code button.
