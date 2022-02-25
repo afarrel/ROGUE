@@ -219,7 +219,7 @@ body <- dashboardBody(introjsUI(),
 			    tabItem(tabName = "rogue",
 			      
 			      fluidRow(column(width=1),(column(width=6,
-			      img(src='ROGUE_MAP.png', align = "center", width = "1010", height="500" )
+			      img(src='ROGUE_Map.png', align = "center", width = "1010", height="500" )
 			      )))
 			    		
 			    ),#tabItem(tabName = "rogue",
