@@ -274,7 +274,7 @@ body <- dashboardBody(introjsUI(),
                      h5(id = "h4CompareButton",actionButton(inputId="CompareButton", label="Compare Samples")),
                      h5(id = "h4Log2FCThreshold",textInput(inputId="Log2FCThreshold", label="Log2FC", value = "1", width = '60px', placeholder = NULL)),
                      h5(id = "h4FDRPvalThreshold",textInput(inputId="FDR_PvalThreshold", label="P-value", value = "0.05", width = '60px', placeholder = NULL)),
-                     h5(id = "h4PvalCorrection",selectInput(inputId="Pval_Correction", label="P-value correction method", c("none","BH", "fdr","BY","holm"), selected = "fdr", multiple = F)),
+                     h5(id = "h4PvalCorrection",selectInput(inputId="Pval_Correction", label="P-value correction method", c("none","BH", "fdr","BY","holm"), selected = "none", multiple = F)),
 		     h5(id = "h4ReadsPlotWidths",sliderInput(inputId = "Reads.Plot_Widths",label = "Plot Widths",min =1 ,max = 10,value = 10)),
 		     h5(id = "h4ReadsVolcanoGenes",sliderInput(inputId = "Reads.Volcano_Genes",label = "Show Volcano Plot Genes",min =0 ,max = 200,value = 20)),
 		     h5(id = "h4ReadsVolcanoFontSize",sliderInput(inputId = "Reads.Volcano_Font_Size",label = "Volcano Plot Font Size",min = 0,max = 10,value = 2)),
@@ -706,7 +706,7 @@ body <- dashboardBody(introjsUI(),
                                                         selected = c("Fold Change","Mead/SD"))),
                                      h5(id = "h4GroupStatAnalyisButton",actionButton(inputId = "Group_Stat_analyis_button",label = "Find Genes")),
                                      h5(id = "h4GroupStatPValThresh",sliderInput(inputId = "Group_Stat_PVal_Thresh",label = "Select Pvalue",min = 0,max = 1,value = 0.05,step = 0.001)),
-                                     h5(id = "h4GroupStatRPKMThresh",textInput(inputId = "Group_Stat_RPKM_Thresh",label = "Min RPKM", value = 5,width = '60px')),
+                                     h5(id = "h4GroupStatRPKMThresh",textInput(inputId = "Group_Stat_RPKM_Thresh",label = "Min Expression", value = 5,width = '60px')),
                                      h5(id = "h4GroupStatFCThresh",textInput(inputId = "Group_Stat_FC_Thresh",label = "Min log2FC", value = 2,width = '60px')),
                                      h5(id = "h4GroupStatDisplayTopGraphs",textInput(inputId = "Group_Stat_Display_Top_Graphs",label = "Display Top Genes", value = 10,width = '60px')),
                                      h5(id = "h4GroupStatListFC",checkboxInput(inputId = "Group_Stat_List_FC",label = "Show log2FC in gene list?",value = TRUE))
@@ -801,14 +801,14 @@ body <- dashboardBody(introjsUI(),
                         #column(width=4,h5(id = "h4SelectBPs",actionButton(inputId = "Select_BPs",label = "Biological Process",style="color: #fff; background-color: #337ab7; border-color: #2e6da4; font-size:9px"))),
                         #column(width=4,h5(id = "h4SelectMFs", actionButton(inputId = "Select_MFs",label = "Molecular Function",style="color: #fff; background-color: #337ab7; border-color: #2e6da4; font-size:9px"))),
                         #column(width=4,h5(id = "h4GOGroupVSample", actionButton(inputId = "Select_CCs",label = "Cellular Components",style="color: #fff; background-color: #337ab7; border-color: #2e6da4; font-size:9px")))
-			selectInput(inputId = "Ontology_Select_Parent",label = "Select GO Class",choices = GO.info[match(c("GO:0003674","GO:0005575","GO:0000003","GO:0001906","GO:0002376","GO:0006791","GO:0006794","GO:0007610","GO:0008152","GO:0008283","GO:0009758","GO:0009987","GO:0015976","GO:0019740","GO:0022414","GO:0022610","GO:0023052","GO:0032501","GO:0032502","GO:0040007","GO:0040011","GO:0043473","GO:0044848","GO:0048511","GO:0050896","GO:0051179","GO:0051704","GO:0065007","GO:0071840","GO:0098743","GO:0098754","GO:0099531"),GO.info[,1]),2][c(1,2,5,9,10,12,15,19,24,25,27,28,17,20,30,3,4,8,11,13,14,16,21,22,23,26,29,31,32,6,7)], selected = NULL, multiple = F)
+			selectInput(inputId = "Ontology_Select_Parent",label = "Select GO Class",choices = paste(c(rep("",2),rep("Biological Process - ",30)),GO.info[match(c("GO:0003674","GO:0005575","GO:0000003","GO:0001906","GO:0002376","GO:0006791","GO:0006794","GO:0007610","GO:0008152","GO:0008283","GO:0009758","GO:0009987","GO:0015976","GO:0019740","GO:0022414","GO:0022610","GO:0023052","GO:0032501","GO:0032502","GO:0040007","GO:0040011","GO:0043473","GO:0044848","GO:0048511","GO:0050896","GO:0051179","GO:0051704","GO:0065007","GO:0071840","GO:0098743","GO:0098754","GO:0099531"),GO.info[,1]),2][c(1,2,5,9,10,12,15,19,24,25,27,28,17,20,30,3,4,8,11,13,14,16,21,22,23,26,29,31,32,6,7)],sep=""), selected = NULL, multiple = F)
                        )),                                  
                        h5(id = "h4OntologyList", selectInput(inputId = "Ontology_List",label = "Select GO (Select GO Class Above)",choices = c(), selected = NULL, multiple = T)),
                        h5(id = "h4SelectOntologiesCombie",fluidRow(
                        	#column(width=4,h5(id = "h4SelectBPsCombine", actionButton(inputId = "Select_BPs_Combine",label = "Biological Process",style="color: #fff; background-color: #537ab7; border-color: #4e6da4; font-size:9px"))),
                         #column(width=4,h5(id = "h4SelectMFsCombine", actionButton(inputId = "Select_MFs_Combine",label = "Molecular Function",style="color: #fff; background-color: #537ab7; border-color: #4e6da4; font-size:9px"))),
                         #column(width=4,h5(id = "h4SelectCCsCombine", actionButton(inputId = "Select_CCs_Combine",label = "Cellular Components",style="color: #fff; background-color: #537ab7; border-color: #4e6da4; font-size:9px")))
-			selectInput(inputId = "Ontology_Select_Parent_Combine",label = "Select GO Class",choices = GO.info[match(c("GO:0003674","GO:0005575","GO:0000003","GO:0001906","GO:0002376","GO:0006791","GO:0006794","GO:0007610","GO:0008152","GO:0008283","GO:0009758","GO:0009987","GO:0015976","GO:0019740","GO:0022414","GO:0022610","GO:0023052","GO:0032501","GO:0032502","GO:0040007","GO:0040011","GO:0043473","GO:0044848","GO:0048511","GO:0050896","GO:0051179","GO:0051704","GO:0065007","GO:0071840","GO:0098743","GO:0098754","GO:0099531"),GO.info[,1]),2][c(1,2,5,9,10,12,15,19,24,25,27,28,17,20,30,3,4,8,11,13,14,16,21,22,23,26,29,31,32,6,7)], selected = NULL, multiple = F)
+			selectInput(inputId = "Ontology_Select_Parent_Combine",label = "Select GO Class",choices = paste(c(rep("",2),rep("Biological Process - ",30)),GO.info[match(c("GO:0003674","GO:0005575","GO:0000003","GO:0001906","GO:0002376","GO:0006791","GO:0006794","GO:0007610","GO:0008152","GO:0008283","GO:0009758","GO:0009987","GO:0015976","GO:0019740","GO:0022414","GO:0022610","GO:0023052","GO:0032501","GO:0032502","GO:0040007","GO:0040011","GO:0043473","GO:0044848","GO:0048511","GO:0050896","GO:0051179","GO:0051704","GO:0065007","GO:0071840","GO:0098743","GO:0098754","GO:0099531"),GO.info[,1]),2][c(1,2,5,9,10,12,15,19,24,25,27,28,17,20,30,3,4,8,11,13,14,16,21,22,23,26,29,31,32,6,7)],sep=""), selected = NULL, multiple = F)
                        )),
                        h5(id = "h4OntologyCombine", selectInput(inputId = "Ontology_Combine",label = "Combine GOs with - Optional:(Select GO Class Above) ",choices = c(), selected = NULL, multiple = T)),
                        h5(id = "h4GOAnalysis", actionButton(inputId = "GO_Analysis",label = "Get GO Gene's Fold Change")),
@@ -837,7 +837,7 @@ body <- dashboardBody(introjsUI(),
                         plotOutput("GO_Distribution"),
                         plotlyOutput("GO_Heatmap_rowScale",height='600px',width = "1200px"),
                         plotOutput("Space_hold",height='200px',width = "200px"),
-                        plotOutput("GO_Heatmap",height='600px',width = "1600px"),                                                              
+                        plotlyOutput("GO_Heatmap",height='600px',width = "1200px"),                                                              
                         textAreaInput(inputId = "GENE_GO_FC_RPKM",label = "GO RPKM Table",value="",width = '800px', height='300px')
                        )#mainPanel
                      )#sidebarLayout
@@ -874,11 +874,11 @@ body <- dashboardBody(introjsUI(),
                           h5(id = "h4DEOGOAnalysis",actionButton(inputId = "DEO_GO_Analysis",label = "Find Differentially Expressed GOs")),
                           h5(id = "h4DEOGOTextFClimit",sliderInput(inputId = "DEO_GO_Text_FC_limit",label = "Label absFC Threshold",min = 0,max = 0,value = 0)),
                           fluidRow(
-                               column(width=4,h5(id = "h4DEOBaseThresh",textInput(inputId = "DEO_BaseThresh",label = "Min RPKM base", value = 3,width = '60px'))),
+                               column(width=4,h5(id = "h4DEOBaseThresh",textInput(inputId = "DEO_BaseThresh",label = "Min Expression base", value = 3,width = '60px'))),
                                column(width=4,h5(id = "h4DEOabsFCThresh",textInput(inputId = "DEO_absFCThresh",label = "Min log2 Fold Change", value = 0.7,width = '60px'))),
                                column(width=4,h5(id = "h4DEOPvalThresh",textInput(inputId = "DEO_PvalThresh",label = "Max p-value", value = 0.1,width = '60px')))
                            ),#fluidRow(
-                           h5(id = "h4DEOGODistAxislimit",sliderInput(inputId = "DEO_GO_Dist_axis_limit",label = "RPKM Distribution axis range",min = 0,max = 0,value = c(0,0))),
+                           h5(id = "h4DEOGODistAxislimit",sliderInput(inputId = "DEO_GO_Dist_axis_limit",label = "Expression Distribution axis range",min = 0,max = 0,value = c(0,0))),
                            h5(id = "h4DEOOntologyMethod2Compare",checkboxGroupInput(inputId = "DEO_Ontology_Method_2Compare",label=h5("Select Ontology Confidence Code"),
                                                         choices = c("EXP - Inferred from Experiment","IDA - inferred from direct assay","IPI - inferred from physical interaction","IMP - inferred from mutant phenotype",
                                                                     "IGI - inferred from genetic interaction","IEP - inferred from expression pattern","TAS - traceable author statement",
@@ -898,7 +898,7 @@ body <- dashboardBody(introjsUI(),
                                plotOutput("DEO_GO_Distribution"),
                                plotlyOutput("DEO_GO_Heatmap_rowScale",height='600px',width = "1200px"),
                                #plotOutput("DEO_GO_Heatmap",height='600px',width = "1600px"),                                                              
-                               textAreaInput(inputId = "DEO_GENE_GO_FC_RPKM",label = "GO RPKM Table",value="",width = '800px', height='300px')
+                               textAreaInput(inputId = "DEO_GENE_GO_FC_RPKM",label = "GO Expression Table",value="",width = '800px', height='300px')
                            )#mainPanel
                         )#sidebarLayout		
 				  )#box(
@@ -917,7 +917,7 @@ body <- dashboardBody(introjsUI(),
 #Group.Members=c()
 #GeneList=c()
 # Define server logic required to draw a histogram
-server <- function(input,output,session,DATA.Values,DATA.Values.5min=c(),Groups,Group.Members=c(),GeneList,Reads.Data_File_path,readData,pengRPKMTable, Group.GTable,Gene.Choices=c(),PRE_GROUPS="") {
+server <- function(input,output,session,DATA.Values,DATA.Values.5min=c(),Groups,Group.Members=c(),GeneList,Reads.Data_File_path,readData,pengRPKMTable, Group.GTable,Gene.Choices=c(),PRE_GROUPS="",Reads_Reset=F,DATA.Values_Flag=F) {
 
 
   
@@ -2013,7 +2013,8 @@ for(xyz in 1:length(gene.index.list))
     geom_bar(stat="identity", position=position_dodge())+
     scale_fill_manual(values=COLOR.List) + 
     theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
-    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    ylab("Expression")
   }
 
 
@@ -2024,7 +2025,8 @@ for(xyz in 1:length(gene.index.list))
     theme_classic()+
     scale_fill_manual(values=COLOR.List) + 
     theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST))+ 
-    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    ylab("Expression")
 
   }
     if(input$Single.Theme.List == "Black and White")
@@ -2034,7 +2036,8 @@ for(xyz in 1:length(gene.index.list))
     theme_bw()+
     scale_fill_manual(values=COLOR.List) + 
     theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST))+ 
-    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    ylab("Expression")
 
   }
     
@@ -2045,7 +2048,8 @@ for(xyz in 1:length(gene.index.list))
     theme_dark()+
     scale_fill_manual(values=COLOR.List) + 
     theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST))+ 
-    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    ylab("Expression")
   }
 
 
@@ -2056,7 +2060,8 @@ for(xyz in 1:length(gene.index.list))
     theme_test()+
     scale_fill_manual(values=COLOR.List) + 
     theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST))+ 
-    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    ylab("Expression")
   }
   
     if(input$Single.Theme.List == "Void")
@@ -2066,7 +2071,8 @@ for(xyz in 1:length(gene.index.list))
     theme_void()+
     scale_fill_manual(values=COLOR.List) + 
     theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST))+ 
-    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    ylab("Expression")
   }
 
 
@@ -2148,7 +2154,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
 		    geom_bar(stat="identity", position=position_dodge())+
 		    scale_fill_manual(values= COLOR.List_genes) + 
 		    theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
-		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    		ylab("Expression")
 		  }
 		
 		
@@ -2159,7 +2166,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
 		    theme_classic()+
 		    scale_fill_manual(values= COLOR.List_genes) + 
 		    theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST))+ 
-		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    		ylab("Expression")
 		
 		  }
 		    if(input$Single.Theme.List == "Black and White")
@@ -2169,7 +2177,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
 		    theme_bw()+
 		    scale_fill_manual(values= COLOR.List_genes) + 
 		    theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST))+ 
-		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    		ylab("Expression")
 		
 		  }
 		    
@@ -2180,7 +2189,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
 		    theme_dark()+
 		    scale_fill_manual(values= COLOR.List_genes) + 
 		    theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST))+ 
-		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    		ylab("Expression")
 		  }
 		
 		
@@ -2191,7 +2201,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
 		    theme_test()+
 		    scale_fill_manual(values= COLOR.List_genes) + 
 		    theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST))+ 
-		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    		ylab("Expression")
 		  }
 		  
 		    if(input$Single.Theme.List == "Void")
@@ -2201,7 +2212,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
 		    theme_void()+
 		    scale_fill_manual(values= COLOR.List_genes) + 
 		    theme(axis.text.x = element_text(angle=input$Single.Xaxis.angle, hjust = HJUST, vjust = VJUST))+ 
-		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))
+		    theme(text = element_text(size=5*(1+input$Sample.Font_Size)))+
+    		ylab("Expression")
 		  }
 
 			#GRID.COLS = min(length(gene.index.list),input$Sample.Graph_Width)
@@ -2483,7 +2495,7 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
    		 scale_fill_manual(values=COLOR.List) + 
    		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
    		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Gene)[xyz],"expression (RPKM)"))  		 
+   		 ylab(paste(unique(GTable$Gene)[xyz],"expression"))  		 
   	  }
 
 
@@ -2495,7 +2507,7 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
    		 scale_fill_manual(values=COLOR.List) + 
    		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
    		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Gene)[xyz],"expression (RPKM)"))  
+   		 ylab(paste(unique(GTable$Gene)[xyz],"expression"))  
 
   }
     if(input$Group.Theme.List == "Black and White")#theme_bw
@@ -2506,7 +2518,7 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
    		 scale_fill_manual(values=COLOR.List) + 
    		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
    		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Gene)[xyz],"expression (RPKM)"))  
+   		 ylab(paste(unique(GTable$Gene)[xyz],"expression"))  
 
   }
     
@@ -2518,7 +2530,7 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
    		 scale_fill_manual(values=COLOR.List) + 
    		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
    		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Gene)[xyz],"expression (RPKM)")) 
+   		 ylab(paste(unique(GTable$Gene)[xyz],"expression")) 
   }
 
 
@@ -2530,7 +2542,7 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
    		 scale_fill_manual(values=COLOR.List) + 
    		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
    		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Gene)[xyz],"expression (RPKM)")) 
+   		 ylab(paste(unique(GTable$Gene)[xyz],"expression")) 
   }
   
     if(input$Group.Theme.List == "Void")#theme_void
@@ -2541,7 +2553,7 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
    		 scale_fill_manual(values=COLOR.List) + 
    		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
    		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Gene)[xyz],"expression (RPKM)")) 
+   		 ylab(paste(unique(GTable$Gene)[xyz],"expression")) 
   }
 
 
@@ -2602,7 +2614,7 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
          scale_fill_manual(values=COLOR.List) +
    		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
    		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Genes)[xyz],"expression (RPKM)"))  		 
+   		 ylab(paste(unique(GTable$Genes)[xyz],"expression"))  		 
   	  }
 
 
@@ -2686,7 +2698,7 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
       
       
       
-      output$Group.barplot.sem.label <- renderText({"Barplots: Collated gene RPKM medians in each Group (error bars: standard error)"})
+      output$Group.barplot.sem.label <- renderText({"Barplots: Collated gene expression medians in each Group (error bars: standard error)"})
       output$Group.barplot.sem <- renderPlot({
       	
       	
@@ -2895,7 +2907,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
 #Reads.data.file.name
    #####################################
    ##################################### 
-   Reads.data.file.name = output$Reads.User_Data_File <- renderText({
+   #Reads.data.file.name = output$Reads.User_Data_File <- renderText({
+   	Reads.data.file.name = function(){
 
     #output$Reads.User_Data_File <- renderText({
     #Reads.data.file.name  <- function(){
@@ -2909,9 +2922,10 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
      Reads.Data_File_path <<- paste(Reads.Data.folder,"/",input$Reads.Data_User,"/",input$Reads.Data_set,sep="")
      #Reads.data.file.name <<- Reads.Data_File_path
      
+     
      #return("Load Data")
      return(Reads.Data_File_path)
-   })#Reads.data.file.name = output$Reads.User_Data_File <- renderText({
+   }#Reads.data.file.name = output$Reads.User_Data_File <- renderText({
    
    
 #####################################
@@ -3061,7 +3075,6 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
    
       inp_source <- input$Select_input
     
-    print("Check Add1")
     if(input$Select_input=="dbase"){isolate(Data_File_path <<- paste(Data.folder,"/",input$Data_User,"/",input$Data_set,sep=""))}
     if(input$Select_input=="upload"){
       inFile.rpkm <- input$file_RPKM
@@ -3082,11 +3095,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
     #RPKM_TABLE_DATA_added       
     #if(input$RPKM.Add_Data_Check & length(RPKM_FILE_LIST)>0)
     
-    print("Check Add2")
     if(file.exists(Data_File_path) && !dir.exists(Data_File_path)) 
  	{
- 		print("Check Add3")
- 		print(length(RPKM_FILE_LIST))
  		
  		RNAME_List = list()
  		RPKM_TABLE_List = list()
@@ -3128,11 +3138,9 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
  		}#if(i==1)
  		if(i > 1)
  		{ 
- 			print("Check Add4")
  			INTERSECT.RNAME.List = intersect(RPKM_TABLE_DATA_added[,1], New.Data.Table[,1]) 			
  	 		if(length(INTERSECT.RNAME.List)>2)
  		 	{
- 		 		print("Check Add5")
  				RPKM_TABLE_DATA_added_temp = RPKM_TABLE_DATA_added 
  	 			colnames(New.Data.Table)[4:ncol(New.Data.Table)] = paste("dataset",i,colnames(New.Data.Table)[4:ncol(New.Data.Table)] ,sep="_")
  	 			RPKM_TABLE_DATA_added <<- cbind(RPKM_TABLE_DATA_added_temp[match(INTERSECT.RNAME.List,RPKM_TABLE_DATA_added_temp[,1]),], New.Data.Table[match(INTERSECT.RNAME.List,New.Data.Table[,1]),4:ncol(New.Data.Table)])
@@ -3224,7 +3232,8 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
   output$GSEA_PLOT_1 <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
   output$GSEA_PLOT_2 <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
   
-  
+
+  DATA.Values_Flag <<- F
   
 #######################################################
 
@@ -3281,14 +3290,10 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      # Since rownames = gene_symbol is used for much of the ordering and plotting, I have limited the use of dplyr functions. #
      
    
-     
-     #filename = args[1] 
-     #filename = inFile$datapath
      filename = file.datapath
      
      
      
-     #allData = read.delim("total.mm9.CD8.IL2.IL15.IL21.reads.txt") #import total reads file
      
      if(input$Reads.Add_Data_Check & length(READS_FILE_LIST)>0)
      {
@@ -3299,7 +3304,6 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      {
        allData = read.delim(filename);
      } 
-     #allData = read.delim("Total.reads.Erin.MM10.txt") #import total reads file
      
 
      #######################
@@ -3383,28 +3387,9 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      
      #readData <- allData[,c(4:length(colnames(allData)))] #create matrix of just read data
     
-     
-     #experimentGroup <- c("Naive.WT.Media","mem.WT.media.aCD3","mem.WT.TSLP.aCD3","D8R.WT"," D8R.KO", "Naive.WT.TSLP","mem.WT.media","mem.WT.TSLP","Naive.WT.media.3.28 ","Naieve.WT.TSLP.3.28") #make column titles
-     
      experimentGroup <- colnames(allData)[4:length(colnames(allData))] #make column titles
      
-     #readData <- DGEList(counts = readData, group = experimentGroup) #make DGEList object of reads
-     
-     #readData <- calcNormFactors(readData) #normalization
-     
-     #logCPM <- cpm(readData, normalized.lib.sizes = TRUE, log = TRUE, prior.count = .125) #log2 counts per million
-     
-     # RPKM <- rpkm(readData, gene.length = allData$len, normalized.lib.sizes = TRUE) #testing - this is the new rpkm function
-     
-     #pengRPKM <- (2**logCPM)*1e3/allData[rownames(logCPM),3] #counts per million divided by gene length
-     
-     # rpkmTable <- data.frame(allData[rownames(RPKM), c(1,2)], RPKM) #testing - this goes with the new rpkm function
-     
-     #pengRPKMTable <- data.frame(allData[rownames(logCPM), c(1,2)], pengRPKM) #make data frame with gene name/symbol and rpkm
-     
-     #pengRPKMTable_allgenes = pengRPKMTable
-     #write.table(pengRPKMTable, file = "normalized_allgenes.txt", sep = "\t", quote = FALSE, row.names = FALSE) #make a file
-     
+      
      #################################################################################################################
 
 #######################################################
@@ -3451,17 +3436,6 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      }
      
      
-     # rpkmTable <- data.frame(allData[rownames(RPKM), c(1,2)], RPKM) #testing - this goes with the new rpkm function
-     
-     
-     
-     #write.table(pengRPKMTable, file = "normalized_expressed.txt", sep = "\t", quote = FALSE, row.names = FALSE) #make a file
-     
-     #################################################################################################################
-     
-     ## Make a Multidimensional Scaling Plot of different experiments to show clustering ##
-     
-     ## Use the top two commands if there aren't experimental replicates.  Use the bottom two if there are. ##
 
 #######################################################
 #######################################################
@@ -3482,10 +3456,7 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      dataDispersion <- readData$common.dispersion^2
      
      
-     # Directory <- paste("Results.",filename,"/",sep="")
-     #sysCommand = paste("mkdir",Directory)
-     #system(sysCommand)
-     
+      
 #######################################################
 #######################################################
      progress$inc(6/nstep, detail = paste("Progress: ",60,"%",sep=""))
@@ -3548,7 +3519,7 @@ Gene.Table.Data = paste(paste(colnames(pengRPKMTable),collapse="\t"),Gene.Table.
 
      updateTextAreaInput(session,inputId="Gene_Table", label = paste("Gene Table"), value = gsub("\t",",",Gene.Table.Data))	
      updateTextAreaInput(session,inputId="FPKM_Table", label = paste("Reads Table"), value = Gene.Table.Data)
-     updateSelectizeInput(session, inputId="Comparison", label = "Select Library", choices = experimentGroup)
+     updateSelectizeInput(session, inputId="Comparison", label = "Select Library", choices = experimentGroup, selected = c(experimentGroup[1:min(2,length(experimentGroup))]))
      
      #ALL_Genes_List =  rownames(pengRPKMTable)
      #ALL_conditions = c("ALL",colnames(readData))      
@@ -3560,12 +3531,12 @@ Gene.Table.Data = paste(paste(colnames(pengRPKMTable),collapse="\t"),Gene.Table.
      #updateSelectInput(session,inputId="Conditions", label="Conditions",choices = ALL_conditions,selected = 1)
      
      
-     ############################################ ## 
+     ############################################### 
      ###############################################       
     
 #######################################################
 #######################################################
-     progress$inc(8/nstep, detail = paste("Progress: ",80,"%",sep=""))
+     progress$inc(8/nstep, detail = paste("Progress: ",80,"% - Analyzing Read data",sep=""))
      Sys.sleep(0.001)
      #######################################################  
      #######################################################     
@@ -3601,6 +3572,7 @@ Gene.Table.Data = paste(paste(colnames(pengRPKMTable),collapse="\t"),Gene.Table.
        DATA.temp[is.na(DATA.temp)] <- 0
        
        isolate(DATA.Values <<- DATA.temp)
+       DATA.Values_Flag <<- T
      }
  
      
@@ -3621,42 +3593,86 @@ Gene.Table.Data = paste(paste(colnames(pengRPKMTable),collapse="\t"),Gene.Table.
      rownames(DATA.Values.5min) <<- GeneList
      #Gene.Choices = as.character(GeneList)
      #Gene.Choices = as.matrix(unique(rownames(DATA.Values.5min)))
-    
-
-     updateSelectizeInput(session, inputId="All_Conditions", label = "Select Dataset", choices = colnames(DATA.Values[,1:ncol(DATA.Values)]),selected = NULL)
-     #updateSelectizeInput(session, inputId="Single.Compare.GeneList", label = "Select Genes (max:12)", choices = Gene.Choices,selected = NULL)
-     updateSelectizeInput(session, inputId="Single.Compare.Conditions", label = "Select Samples", choices = c("ALL",colnames(DATA.Values)[1:ncol(DATA.Values)]),selected = NULL)
-     updateSelectizeInput(session, inputId="Single.Control", label = "Select Control", choices = colnames(DATA.Values)[1:ncol(DATA.Values)],selected = NULL)
-     updateSelectizeInput(session, inputId="Single.Treatment", label = "Select Treatment", choices = colnames(DATA.Values)[1:ncol(DATA.Values)],selected = NULL)
-     #updateSelectizeInput(session, inputId="Group.Compare.GeneList", label = "Select Genes (max:12)", choices = Gene.Choices,selected = NULL)
-     updateSelectizeInput(session, inputId = "Control_GO_Test",label = "Select Control",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
-     updateSelectizeInput(session, inputId = "Subjects_GO_Test",label = "Select Subjects",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
-     updateSelectizeInput(session, inputId = "DEO_Control_GO_Test",label = "Select Control",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
-     updateSelectizeInput(session, inputId = "DEO_Subjects_GO_Test",label = "Select Subjects",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
-     updateSelectizeInput(session, inputId = "Control_GSEA_Test",label = "Select Control",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = colnames(DATA.Values)[1:ncol(DATA.Values)][1])
-     updateSelectizeInput(session, inputId = "Query_GSEA_Test",label = "Select Query",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = colnames(DATA.Values)[1:ncol(DATA.Values)][ncol(DATA.Values)])
-
      
      
+     Reads_Reset <<- T
      
-     ###############################################
-     
-     ###############################################    
-     
-     
-        
-	 
-	 
-     progress$inc(10/nstep, detail = paste("Progress: ",99,"%",sep=""))
+         progress$inc(10/nstep, detail = paste("Progress: ",100,"%",sep=""))
+ 
  
    
    enable("Reads.Load_Data")
    #shinyjs::enable("Reads.Load_Data")
+    
+ })#-obs.Edgr.Reads.Load_Data.button
+
+     ###############################################    
+     ###############################################    
+      
+      	 
+ 
 
 
 
-})#-obs.Edgr.Reads.Load_Data.button
+
      
+     
+     
+#####################################
+###############################    
+
+  observe({ 
+  	
+  	if(length(input$Comparison)>=1)
+  	if(Reads_Reset==T & DATA.Values_Flag == T)
+  	{
+  	
+  	  progress <- shiny::Progress$new()
+     # Make sure it closes when we exit this reactive, even if there's an error
+     on.exit(progress$close())
+     
+     progress$set(message = "Updating Selection fields", value = 0)
+     # Increment the progress bar, and update the detail text.
+     progress$inc(1/10, detail = paste("Progress: ",10,"%",sep=""))
+     Sys.sleep(0.001)
+  	
+  	
+  	 updateSelectizeInput(session, inputId="All_Conditions", label = "Select Dataset", choices = colnames(DATA.Values[,1:ncol(DATA.Values)]),selected = NULL)
+
+     #updateSelectizeInput(session, inputId="Single.Compare.GeneList", label = "Select Genes (max:12)", choices = Gene.Choices,selected = NULL)
+              
+     updateSelectizeInput(session, inputId="Single.Compare.Conditions", label = "Select Samples", choices = c("ALL",colnames(DATA.Values)[1:ncol(DATA.Values)]),selected = NULL)
+     updateSelectizeInput(session, inputId="Single.Control", label = "Select Control", choices = colnames(DATA.Values)[1:ncol(DATA.Values)],selected = NULL)
+             
+     updateSelectizeInput(session, inputId="Single.Treatment", label = "Select Treatment", choices = colnames(DATA.Values)[1:ncol(DATA.Values)],selected = NULL)
+     #updateSelectizeInput(session, inputId="Group.Compare.GeneList", label = "Select Genes (max:12)", choices = Gene.Choices,selected = NULL)
+     updateSelectizeInput(session, inputId = "Control_GO_Test",label = "Select Control",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
+              
+     updateSelectizeInput(session, inputId = "Subjects_GO_Test",label = "Select Subjects",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
+               
+     updateSelectizeInput(session, inputId = "DEO_Control_GO_Test",label = "Select Control",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
+              
+     updateSelectizeInput(session, inputId = "DEO_Subjects_GO_Test",label = "Select Subjects",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
+               progress$inc(9.8/10, detail = paste("Progress: ",50,"% Updating Selection fields",sep=""))
+     Sys.sleep(0.001)
+     updateSelectizeInput(session, inputId = "Control_GSEA_Test",label = "Select Control",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = colnames(DATA.Values)[1:ncol(DATA.Values)][1])
+     
+               progress$inc(9.9/10, detail = paste("Progress: ",99,"% Updating Selection fields",sep=""))
+     Sys.sleep(0.001)
+     updateSelectizeInput(session, inputId = "Query_GSEA_Test",label = "Select Query",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = colnames(DATA.Values)[1:ncol(DATA.Values)][ncol(DATA.Values)])
+
+
+Reads_Reset <<- F
+
+}#if(Reads_Reset==T & DATA.Values_Flag == T)
+
+               
+
+  	
+  	
+  	})#observe({ 
+
+   
      
 #####################################
 #####################################
@@ -3724,7 +3740,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
          rownames(pengRPKMTable) = make.unique(as.character(pengRPKMTable[,2]))
 		 
 		 xLabel <- "logCPM"       
-         yLabel <- paste("log2(",Sample2," RPKM / ",Sample1," RPKM)",sep="")
+         yLabel <- paste("log2(",Sample2," Expression / ",Sample1," Expression)",sep="")
       
       
            MIN.dim = min(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
@@ -3788,7 +3804,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
          comparisonTable <- comparison$table #rename the variable within comparison so RStudio won't complain all the time
          
                  
-         mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", FDR <",as.numeric(as.matrix(input$FDR_PvalThreshold)) ,")") #set up a title for graphs
+         mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", p-value <",as.numeric(as.matrix(input$FDR_PvalThreshold)) ,")") #set up a title for graphs
          
          numGenes <- sum(abs(decideTestsDGE(comparison,adjust.method = input$Pval_Correction, p.value = input$FDR_PvalThreshold))) # number of genes with significant differential expression
 
@@ -3796,12 +3812,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
          if (numGenes > 0) { #check to make sure there is any differential expression
            
            
-           
-           
- 
-           
-           
-         
+    
            topGenes <- topTags(comparison, n = numGenes) #top genes
            
            allGenes <- topTags(comparison, n = nrow(comparisonTable)) #all genes
@@ -3813,8 +3824,11 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            allGenesTable <- allGenes$table #rename for ease
            
            FC2 <- rownames(topGenesTable[abs(topGenesTable$logFC) > log2(thresholdRatio),]) #FC2 = rownames of fold change # greater than log2 threshold ratio
+           NonSig <- rownames(topGenesTable[abs(topGenesTable$logFC) <= log2(thresholdRatio),]) 
            
            FC2_table <- data.frame(pengRPKMTable[FC2,], topGenesTable[FC2,], 2**topGenesTable[FC2, c(1)]) #make a table of FC2 genes with their expression ratio
+           FC2_table_non_sig <- data.frame(pengRPKMTable[NonSig,], topGenesTable[NonSig,], 2**topGenesTable[NonSig, c(1)]) #make a table of monsig genes with their expression ratio
+
            
            colnames(FC2_table)[length(colnames(FC2_table))] <- "foldChange" #rename last column
            
@@ -3829,11 +3843,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            #write.table(comparedAllGenes, file = paste(Directory,Sample1,".vs.",Sample2,".allGenes.txt",sep=""), sep = "\t", quote = FALSE, row.names = FALSE) #make a file
            
            evenExpression <- setdiff(comparedAllGenes, FC2_table) #make a table of evenly expressed genes
-           
-           print(allGenesTable[1:3,])
-           print(FC2_table[1:5,])
-           print(comparedAllGenes[1:3,])
-           print(evenExpression[1:5,])
+
            
            #write.table(evenExpression, file = paste(Directory,Sample1,".vs.",Sample2,".evenExpression.txt",sep=""), sep = "\t", quote = FALSE, row.names = FALSE) #make a file
 
@@ -3845,47 +3855,39 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
       #########################
       if(input$Reads.EdgeR_DEseq == "DESeq2")
       {
-      	 print("CHECK0_begin")
       	counts <- readData$counts
       	print(counts[1:4,1:3])
 		# converting column gene symbols to rownames
 		#rownames(counts) <-  counts[,1]
 		#counts$gene_name <-  NULL
 		
-		 print("CHECK0_still_going")
 		
          Sample1 = input$Comparison[1]
          Sample2 = input$Comparison[2]
          
          experimentPair <- c(Sample1,Sample2) #choose a pair of experiments to compare
-         print("CHECK0Z")
 
          comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
          comparisonTable <- comparison$table #rename the variable within comparison so RStudio won't complain all the time               
-         mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", FDR <",as.numeric(as.matrix(input$FDR_PvalThreshold)) ,")") #set up a title for graphs        
+         mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", p-value <",as.numeric(as.matrix(input$FDR_PvalThreshold)) ,")") #set up a title for graphs        
          numGenes <- sum(abs(decideTestsDGE(comparison,adjust.method = input$Pval_Correction, p.value = input$FDR_PvalThreshold))) # number of genes with significant differential expression
 
 
-         print("CHECK0A")
         coldata_test = data.frame(Treatment = rep(c(Sample1, Sample2),each=2),Samples = rep(c(Sample1, Sample2),each=2))
 		rownames(coldata_test) = make.unique(rep(c(Sample1, Sample2),each=2))
 
-		print("CHECK0A1")
 		counts_Compare = counts[,which(colnames(counts) %in% c(Sample1, Sample2))]
 		print(counts_Compare[1:3,1:2])
 		counts_Compare = counts_Compare[,c(1,1,2,2)]
 		counts_Compare[,c(2,4)] <- counts_Compare[,c(2,4)]+1
 	
-	    print("CHECK0A2") 
 		dds <- DESeqDataSetFromMatrix(countData = counts_Compare,
     		                          colData = coldata_test,
     		                          design = ~Treatment)
 		# pre-filtering Step: remove rows with 0 reads
 		
-		print("CHECK0A3")
 		dds <- dds[ rowSums(counts(dds)) > 0, ]
 
-         print("CHECK0B")
 
 		dds$Treatment <- relevel(dds$Treatment, ref=c(Sample1, Sample2)[1])
 		dds$Treatment <- factor(dds$Treatment, levels=c(Sample1, Sample2))
@@ -3916,9 +3918,13 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
         rownames(comparedAllGenes) = rownames(comparisonTable)
 
         FC2 <- rownames(comparedAllGenes[abs(comparedAllGenes$logFC) > (thresholdRatio),]) #FC2 = rownames of fold change # greater than log2 threshold ratio
-        
+        NonSig <- rownames(comparedAllGenes[abs(comparedAllGenes$logFC) <= (thresholdRatio),]) #FC2 = rownames of fold change # greater than log2 threshold ratio
+
                 
         FC2_table <- data.frame(pengRPKMTable[FC2,], comparisonTable[FC2,]) #make a table of FC2 genes with their expression ratio
+        FC2_table_non_sig <- data.frame(pengRPKMTable[NonSig,], comparisonTable[NonSig,]) #make a table of FC2 genes with their expression ratio
+
+        
         
         evenExpression <- setdiff(comparedAllGenes, FC2_table) #make a table of evenly expressed genes
 
@@ -3940,13 +3946,17 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
           	
     #     output$ComparePlot2 = renderPlot({
 
-            Volc.Reads <- ggplot(xlab = paste("log2FC (",Sample2,"/",Sample1,")",sep=""), ylab = "-log10(p-value)")+
+            Volc.Reads <- ggplot()+
              ggtitle(mainTitle)+ #put in the title
              theme_bw()+ #make background white, must come before theme function call
              theme(plot.title = element_text(hjust = .8, size = 15))+ #center title and make it bigger
+             geom_point(data = FC2_table_non_sig, aes(x = logFC, y= -log10(PValue + 1e-300)), alpha = 0.1)+ #plot the even expression points
              geom_point(data = evenExpression, aes(x = logFC, y= -log10(PValue + 1e-300)), alpha = 1/150)+ #plot the even expression points
              geom_point(data = FC2_table, aes(x = logFC, y = -log10(PValue + 1e-300)), color = "darkblue", alpha = 2/5)+ #plot the differentially expressed points
-             geom_vline(xintercept = c(-(thresholdRatio),(thresholdRatio)), color = "forestgreen")+ #plot the vertical boundary lines
+             geom_vline(xintercept = c(-(thresholdRatio),(thresholdRatio)), color = "red")+ #plot the vertical boundary lines
+             geom_hline(yintercept = ifelse(is.na(as.numeric(input$FDR_PvalThreshold)),0,-log10(as.numeric(input$FDR_PvalThreshold) + 1e-300)), color = "red")+ #plot the vertical boundary lines
+             xlab(paste("log2FC (",Sample2,"/",Sample1,")",sep=""))+
+             ylab("-log10(p-value)")+
              geom_text(data = FC2_table[1:ifelse(input$Reads.Volcano_Genes < nrow(FC2_table),input$Reads.Volcano_Genes,nrow(FC2_table)),], aes(x = logFC, y = -log10(PValue + 1e-300)), label = rownames(FC2_table)[1:ifelse(input$Reads.Volcano_Genes < nrow(FC2_table),input$Reads.Volcano_Genes,nrow(FC2_table))], color = "firebrick", size = input$Reads.Volcano_Font_Size, nudge_y = -0.2) #label the diff. expr. points
 #p1= ggplot(xlab = paste("log2FC (",Sample2,"/",Sample1,")",sep=""), ylab = "-log10(p-value)")+
 #               ggtitle(mainTitle)+ #put in the title
@@ -3971,7 +3981,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            
            ## Smear Plot
            
-           yLabel <- paste("log2(",Sample2," RPKM / ",Sample1," RPKM)",sep="") #change the y label
+           yLabel <- paste("log2(",Sample2," Expression / ",Sample1," Expression)",sep="") #change the y label
            
            up <- nrow(topGenesTable[which(comparisonTable$logFC > (thresholdRatio)  & comparisonTable$PValue <= input$FDR_PvalThreshold),]) #number of rows of upregulated genes
            
@@ -4227,7 +4237,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            	  {
            	  	FC_Genes <- as.character(FC_Genes)          
            	    FC_Genes_Symbols = as.character(FC_Genes)
-           	  	FC_Genes_Symbols[which(FC_Genes %in% GENE_ID_Match$Mouse.gene.stable.ID)] = as.character(GENE_ID_Match$Mouse.gene.name[match(FC_Genes[which(FC_Genes %in% GENE_ID_Match$Mouse.gene.stable.ID)],GENE_ID_Match$Mouse.gene.stable.ID)])
+           	  	#FC_Genes_Symbols[which(FC_Genes %in% GENE_ID_Match$Mouse.gene.stable.ID)] = as.character(GENE_ID_Match$Mouse.gene.name[match(FC_Genes[which(FC_Genes %in% GENE_ID_Match$Mouse.gene.stable.ID)],GENE_ID_Match$Mouse.gene.stable.ID)])
            	  }
            } 
            
@@ -4238,7 +4248,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            	  {
            	  	FC_Genes_UP <- as.character(FC_Genes_UP)
           		FC_Genes_UP_Symbols = as.character(FC_Genes_UP)
-           	  	FC_Genes_UP_Symbols[which(FC_Genes_UP %in% GENE_ID_Match$Mouse.gene.stable.ID)] = as.character(GENE_ID_Match$Mouse.gene.name[match(FC_Genes_UP[which(FC_Genes_UP %in% GENE_ID_Match$Mouse.gene.stable.ID)],GENE_ID_Match$Mouse.gene.stable.ID)])
+           	  	#FC_Genes_UP_Symbols[which(FC_Genes_UP %in% GENE_ID_Match$Mouse.gene.stable.ID)] = as.character(GENE_ID_Match$Mouse.gene.name[match(FC_Genes_UP[which(FC_Genes_UP %in% GENE_ID_Match$Mouse.gene.stable.ID)],GENE_ID_Match$Mouse.gene.stable.ID)])
            	  }
            }
            
@@ -4249,7 +4259,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            	  {
            	  	FC_Genes_DOWN <- as.character(FC_Genes_DOWN)
            		FC_Genes_DOWN_Symbols = as.character(FC_Genes_DOWN)
-           	  	FC_Genes_DOWN_Symbols[which(FC_Genes_DOWN %in% GENE_ID_Match$Mouse.gene.stable.ID)] = as.character(GENE_ID_Match$Mouse.gene.name[match(FC_Genes_DOWN[which(FC_Genes_DOWN %in% GENE_ID_Match$Mouse.gene.stable.ID)],GENE_ID_Match$Mouse.gene.stable.ID)])
+           	  	#FC_Genes_DOWN_Symbols[which(FC_Genes_DOWN %in% GENE_ID_Match$Mouse.gene.stable.ID)] = as.character(GENE_ID_Match$Mouse.gene.name[match(FC_Genes_DOWN[which(FC_Genes_DOWN %in% GENE_ID_Match$Mouse.gene.stable.ID)],GENE_ID_Match$Mouse.gene.stable.ID)])
            	  }
            }
             #########################################################
@@ -4258,9 +4268,9 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
  
    
    
-           #updateTextAreaInput(session,inputId="GeneList_Result", label = paste("Differentially Expressed Genes",mainTitle), value = paste(FC_Genes_Symbols,collapse="\n"))
-           #updateTextAreaInput(session,inputId="GeneList_Result_UP", label = paste("Up Regulated Genes",mainTitle), value = paste(FC_Genes_UP_Symbols,collapse="\n"))
-           #updateTextAreaInput(session,inputId="GeneList_Result_DOWN", label = paste("Down Regulated Genes",mainTitle), value = paste(FC_Genes_DOWN_Symbols,collapse="\n"))
+           updateTextAreaInput(session,inputId="GeneList_Result", label = paste("Differentially Expressed Genes",mainTitle), value = paste(FC_Genes_Symbols,collapse="\n"))
+           updateTextAreaInput(session,inputId="GeneList_Result_UP", label = paste("Up Regulated Genes",mainTitle), value = paste(FC_Genes_UP_Symbols,collapse="\n"))
+           updateTextAreaInput(session,inputId="GeneList_Result_DOWN", label = paste("Down Regulated Genes",mainTitle), value = paste(FC_Genes_DOWN_Symbols,collapse="\n"))
           
  
 	   output$FC_List_Download <- downloadHandler(
@@ -4458,7 +4468,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            
            xLabel <- "logCPM"
            
-           yLabel <- paste("log2(",Sample2," RPKM / ",Sample1," RPKM)",sep="")
+           yLabel <- paste("log2(",Sample2," Expression / ",Sample1," Expression)",sep="")
            
            
            #Groups.readData.Medians[l,k] = median(as.numeric(as.matrix(readData[,match(unlist(strsplit(Group.Members[Group.Index[k]],split=";")),as.character(unlist(colnames(DATA.Values.5min))))])))
@@ -4506,7 +4516,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            
            thresholdRatio <- as.numeric(input$Groups.Log2FCThreshold)
            
-           mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", FDR <",as.numeric(as.matrix(input$Groups.FDR_PvalThreshold)) ,")") #set up a title for graphs
+           mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", p-value <",as.numeric(as.matrix(input$Groups.FDR_PvalThreshold)) ,")") #set up a title for graphs
            
            numGenes <- sum(abs(decideTestsDGE(comparison,adjust.method = input$Groups.Pval_Correction, p.value = input$Groups.FDR_PvalThreshold))) # number of genes with significant differential expression
            
@@ -4591,7 +4601,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
              
              ## Smear Plot
              
-             yLabel <- paste("log2(",Sample2," RPKM / ",Sample1," RPKM)",sep="") #change the y label
+             yLabel <- paste("log2(",Sample2," Expression / ",Sample1," Expression)",sep="") #change the y label
              
              up <- nrow(topGenesTable[topGenesTable$logFC > log2(thresholdRatio),]) #number of rows of upregulated genes
              
@@ -4906,7 +4916,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
   
 	observeEvent(input$Ontology_Select_Parent,ignoreInit = TRUE,{
  
- 			GO_ID_info = GO.info[which(GO.info[,2] == input$Ontology_Select_Parent),1]	
+ 			GO_ID_info = GO.info[which(GO.info[,2] == gsub("Biological Process - ","",input$Ontology_Select_Parent)),1]	
  			GO_NAME_List = GO.info[which(GO.info[,1] %in% unlist(strsplit(GO.EXT.hierarchy[grep(paste("^",GO_ID_info,sep=""),GO.EXT.hierarchy)]," "))),2]		
  			updateSelectInput(session = session,inputId = "Ontology_List",label = "Select GO (Select GO from drop-down list)",choices = GO_NAME_List, selected = NULL)	
  	})#observeEvent(input$Ontology_Select_Parent,ignoreInit = TRUE,{
@@ -4914,7 +4924,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 
 	observeEvent(input$Ontology_Select_Parent_Combine,ignoreInit = TRUE,{
 
-                        GO_ID_info_Combine = GO.info[which(GO.info[,2] == input$Ontology_Select_Parent_Combine),1]
+                        GO_ID_info_Combine = GO.info[which(GO.info[,2] == gsub("Biological Process - ","",input$Ontology_Select_Parent_Combine)),1]
                         GO_NAME_List_Combine = GO.info[which(GO.info[,1] %in% unlist(strsplit(GO.EXT.hierarchy[grep(paste("^",GO_ID_info_Combine,sep=""),GO.EXT.hierarchy)]," "))),2]
                         updateSelectInput(session = session,inputId = "Ontology_Combine",label = "Select GO (Select GO from drop-down list)",choices = GO_NAME_List_Combine, selected = NULL)
         })#observeEvent(input$Ontology_Select_Parent_Combine,ignoreInit = TRUE,{
@@ -5025,8 +5035,7 @@ Fpkm.table.New.txt = c()
     GO.exmp  = input$Ontology_List
     GO.comb  = input$Ontology_Combine
     
-    print(GO.exmp)
-    print(GO.comb)
+ 
     
     Control.fpkm = input$Control_GO_Test
     Control.fpkm.inx = which(colnames(Fpkm.table.New.txt)==Control.fpkm)
@@ -5039,10 +5048,7 @@ Fpkm.table.New.txt = c()
     #######
     #######
     
-    print(GO.exmp)
-    print(Test.fpkm)
-    print(Control.fpkm)
-    print(RPKM.threshold)
+
     
     if(length(GO.exmp)>0 & length(Test.fpkm)>0 & length(Control.fpkm)>0 & nchar(RPKM.threshold)>0)
     {
@@ -5091,6 +5097,7 @@ Fpkm.table.New.txt = c()
       
       GO_Gene_Lists = c()
       
+      Largest_FC = 0
       Largest_FC_Union = 0
       Output_Gene_List = "Gene List"
       
@@ -5141,30 +5148,39 @@ Fpkm.table.New.txt = c()
           }#for( j in 1:length(Test.fpkm.inx))
           GO_Gene_Lists = c(GO_Gene_Lists,list(FC_LOG2_ALLsets))
      
+      
      	  print(length(GO_expressed_genes.inx.union))
      	  
-     	  
-     	  if(length(GO_expressed_genes.inx.union) > 0)
+     	  if(length(GO_expressed_genes.inx.union) >= 2)
      	  {
+     	  	
+
           	GO_expressed_genes.inx.union = unique(GO_expressed_genes.inx.union)
           	GO_expressed_genes.value.union = rbind(Fpkm.table.New.txt[GO_expressed_genes.inx.union,c(Control.fpkm.inx,Test.fpkm.inx)])
           	Gene.value.set.temp = cbind(rownames(Fpkm.table.New.txt)[GO_expressed_genes.inx.union],GO_expressed_genes.value.union)
           	colnames(Gene.value.set.temp) = c("Gene_Name",colnames(Fpkm.table.New.txt)[c(Control.fpkm.inx,Test.fpkm.inx)])
   
-          
+
           	if(ncol(GO_expressed_genes.value.union)>=3 & nrow(GO_expressed_genes.value.union)>=2)
           	{
           	  ncol(GO_expressed_genes.value.union)
           	  Largest_FC = apply(abs(log2((GO_expressed_genes.value.union[,-1]+1)/(GO_expressed_genes.value.union[,1]+1) )),MARGIN = 1,function(X) max(X))
           	}#if(ncol(GO_expressed_genes.value.union)>=3)
+          	
+
           	if(ncol(GO_expressed_genes.value.union)<=2)
           	{
           	  ncol(GO_expressed_genes.value.union)
           	  Largest_FC = abs(log2((GO_expressed_genes.value.union[,-1]+1)/(GO_expressed_genes.value.union[,1]+1))) 
          	 }#if(ncol(GO_expressed_genes.value.union)<=2)
           
-       	   Gene.value.set.temp = Gene.value.set.temp[order(Largest_FC,decreasing = T),]
-      
+   
+            if(!is.null(dim(Gene.value.set.temp)))   	
+            {		
+       	   		Gene.value.set.temp = Gene.value.set.temp[order(Largest_FC,decreasing = T),]
+      		}#if(!is.null(dim(Gene.value.set.temp)))   	
+
+
           
 	          Output_Gene_List = paste(Output_Gene_List,"\n\n",toupper(GO.exmp[i]),"\n",paste(colnames(Gene.value.set.temp),collapse="\t"),sep="")
          
@@ -5172,12 +5188,15 @@ Fpkm.table.New.txt = c()
    	 	     {
               
          	   Gene_name_sect = max(nchar(as.matrix(Gene.value.set.temp[,1]))) + 5
+         	   if(is.na(Gene_name_sect)) Gene_name_sect = 5
     		       for(n in 1:nrow(Gene.value.set.temp))
            	   {
+
         		      Output_Line = paste(rep(" ",Gene_name_sect + (length(2:ncol(Gene.value.set.temp))*7)),collapse="")
         	    		  substr(Output_Line,1,nchar(as.matrix(Gene.value.set.temp[n,1]))) = as.matrix(Gene.value.set.temp[n,1])
             		  for(b in 2:(ncol(Gene.value.set.temp)))
             		  {
+
             		    substr(Output_Line,Gene_name_sect+(b-2)*7+1,Gene_name_sect+(b-2)*7+6) = substr(as.matrix(Gene.value.set.temp[n,b]),1,6)
               	  }#for(b in 2:(ncol(Gene.value.set.temp)))
            	   Output_Gene_List = paste(Output_Gene_List,"\n",paste(c(substr(Output_Line,1,Gene_name_sect),substr(as.matrix(Gene.value.set.temp[n,2:ncol(Gene.value.set.temp)]),1,6)),collapse="\t"),sep="")
@@ -5189,9 +5208,12 @@ Fpkm.table.New.txt = c()
           	updateTextAreaInput(session,inputId = "GENE_GO_FC_RPKM",label = "GO RPKM Table",value=Output_Gene_List)
           	Largest_FC_Union = max(c(Largest_FC_Union,Largest_FC))
           	
+
+          	
            }#if(length(GO_expressed_genes.inx.union) > 0)          
         	  }#for(i in 1:length(GO.exmp.IDs))
-      
+        	  
+
       updateSliderInput(session = session,inputId = "GO_Text_FC_limit",label = "Label absFC Threshold",min = 0,max = floor(Largest_FC_Union) ,value = 0,step = 0.1)
       
 
@@ -5222,6 +5244,8 @@ print("output$GO_FC_Expression")
           GO_genes.inx = which(rownames(Fpkm.table.New.txt) %in% GO_genes) 
           FC_LOG2_ALLsets = c()
           
+         if(length(GO_genes.inx)>=2)
+         {
           for( j in 1:length(Test.fpkm.inx))
           {          
             GO_expressed_genes.inx = c()
@@ -5260,7 +5284,8 @@ print("output$GO_FC_Expression")
             }# if(length(GO_genes.inx)>0)
           }#for( j in 1:length(Test.fpkm.inx))
           #GO_Gene_Lists = c(GO_Gene_Lists,list(FC_LOG2_ALLsets))
-          
+         }#if(length(GO_genes.inx)>=1)
+         
         }#for(i in 1:length(GO.exmp.IDs))
         abline(h=0, lty=2,lwd =1.5,col="red")
         abline(h=1, lty=2,lwd =0.5,col="blue")
@@ -5300,7 +5325,7 @@ print("output$GO_FC_Expression_Sep")
             
             
               GO_expressed_genes.inx = c()
-              if(length(GO_genes.inx)>0)
+              if(length(GO_genes.inx)>=2)
               {
                 for(k in 1:nrow(Fpkm.table.New.txt[GO_genes.inx,]))
                 {
@@ -5428,9 +5453,10 @@ print("output$GO_FC_Expression_Sep")
          
            print("Line 4433")
            print(length(GO_genes.inx))
+           ALL_GO_expressed_genes.inx = c()
            if(length(GO_genes.inx)>0)
            {
-            ALL_GO_expressed_genes.inx = c()
+            #ALL_GO_expressed_genes.inx = c()
             for( j in 1:length(combined.fpkm.inx))
             {
               
@@ -5458,14 +5484,15 @@ print("output$GO_FC_Expression_Sep")
               ALL_GO_expressed_genes.inx = unique(c(ALL_GO_expressed_genes.inx,GO_expressed_genes.inx))
             }#for( j in 1:length(combined.fpkm.inx))
            
-            Heatmap_gene.inx_List = c(Heatmap_gene.inx_List,list(ALL_GO_expressed_genes.inx))
+            #Heatmap_gene.inx_List = c(Heatmap_gene.inx_List,list(ALL_GO_expressed_genes.inx))
            }#if(length(GO_genes.inx)>0)
+           Heatmap_gene.inx_List = c(Heatmap_gene.inx_List,list(ALL_GO_expressed_genes.inx))
           }#for(i in 1:length(GO.exmp.IDs))
           
          
-          print("if(length(GO_genes.inx)>0)")
-          print(length(GO_genes.inx))
-         if(length(GO_genes.inx)>0)
+          print("if(length(Group_GO_Values)>0)")
+          print(length(Group_GO_Values))
+         if(length(Group_GO_Values)>0)
          {
           Distributions.max.val = max(unlist(Group_GO_Values))
           Distributions.min.val = min(unlist(Group_GO_Values))
@@ -5476,14 +5503,15 @@ print("output$GO_FC_Expression_Sep")
           {
           	if(length(unlist(Group_GO_Values[h])) > 2)
           	{
-            	Distributions.max.density = max(Distributions.max.density,density(unlist(Group_GO_Values[h]))$y)
-            	Distributions.max.freq = max(Distributions.max.freq,hist(unlist(Group_GO_Values[h]),plot=F)$count)
+            		Distributions.max.density = max(Distributions.max.density,density(unlist(Group_GO_Values[h]))$y)
+            		Distributions.max.freq = max(Distributions.max.freq,hist(unlist(Group_GO_Values[h]),plot=F)$count)
             }#if(length(unlist(Group_GO_Values[h])) > 2)
           }
          
+        
           
-          RGB.order = (permutations(3,3,repeats.allowed = T)-1)/2
-          RGB.order = RGB.order[c(-1,-27),]
+          RGB.order = (permutations(ceiling(length(Dist.Legend_Labels)^(1/3)),3,repeats.allowed = T))/max(permutations(ceiling(length(Dist.Legend_Labels)^(1/3)),3,repeats.allowed = T))
+          #RGB.order = RGB.order[c(-1,-27),]
           peak.counts = hist(apply(RGB.order,MARGIN = 1,function(x) sum(x)),plot=F)$counts
           peak.mids = hist(apply(RGB.order,MARGIN = 1,function(x) sum(x)),plot=F)$mids
           peak.sums = apply(RGB.order,MARGIN = 1,function(x) sum(x))
@@ -5497,11 +5525,9 @@ print("output$GO_FC_Expression_Sep")
           x.25pct.val = (Distributions.max.val - Distributions.min.val)*0.25
           x.min.rpkm.val = Distributions.min.val - x.25pct.val
           x.max.rpkm.val = Distributions.max.val + x.25pct.val
-          updateSliderInput(session = session,inputId = "GO_Dist_axis_limit",label = "RPKM Distribution axis range",min = floor(max(c(0,x.min.rpkm.val))),max = ceiling(x.max.rpkm.val) ,value = c(Distributions.min.val,Distributions.max.val),step = 5)
+          updateSliderInput(session = session,inputId = "GO_Dist_axis_limit",label = "Expression Distribution axis range",min = floor(max(c(0,x.min.rpkm.val))),max = ceiling(x.max.rpkm.val) ,value = c(Distributions.min.val,Distributions.max.val),step = 5)
           
-    print(Distributions.max.val)
-print(Distributions.min.val)
-print(Group_GO_Values)
+
 
 print("output$GO_Distribution ")   
           ###############################################  
@@ -5516,7 +5542,17 @@ print("output$GO_Distribution ")
             par(xpd=F)
             
           
-          plot(0,xlim=c(min(input$GO_Dist_axis_limit),max(input$GO_Dist_axis_limit)),ylim = c(0,Distributions.max.freq),cex=0,xlab = "RPKM", ylab="Frequency",cex.lab=0.8*Font_Adjust,cex.axis=0.8*Font_Adjust)
+          XLIM_min = min(input$GO_Dist_axis_limit)
+          XLIM_max = max(input$GO_Dist_axis_limit)
+          
+          if(XLIM_min == Inf | XLIM_min == -Inf | XLIM_max == Inf | XLIM_max == -Inf )
+          {
+          	XLIM_min = 0
+          	XLIM_max = 1
+          }
+          
+          
+          plot(0,xlim=c(XLIM_min, XLIM_max),ylim = c(0,Distributions.max.freq),cex=0,xlab = "Expression", ylab="Frequency",cex.lab=0.8*Font_Adjust,cex.axis=0.8*Font_Adjust)
           for(h in 1:length(Group_GO_Values))
           {
           	if(length(unlist(Group_GO_Values[h])) >= 2)
@@ -5525,7 +5561,7 @@ print("output$GO_Distribution ")
             }#if(length(unlist(Group_GO_Values[h])) >= 2)
           }# for(h in 1:length(Group_GO_Values))
           
-          plot(0,xlim=c(min(input$GO_Dist_axis_limit),max(input$GO_Dist_axis_limit)),ylim = c(0,Distributions.max.density),cex=0,xlab = "RPKM", ylab="Density",cex.lab=0.8*Font_Adjust,cex.axis=0.8*Font_Adjust)
+          plot(0,xlim= c(XLIM_min, XLIM_max),ylim = c(0,Distributions.max.density),cex=0,xlab = "Expression", ylab="Density",cex.lab=0.8*Font_Adjust,cex.axis=0.8*Font_Adjust)
           
        
           
@@ -5568,29 +5604,108 @@ print("output$GO_Distribution ")
 	  Heatmaply_TEXT = c()
 	  for(i in 1:length(GO.exmp.IDs))
 	  {
-		Heatmaply_TEXT[i] = paste("heatmaply(Fpkm.table.New.txt[Heatmap_gene.inx_List[[",i,"]],combined.fpkm.inx],scale=\"row\",xlab = GO.exmp[",i,"],colors = colorRampPalette(colors = c(\"blue\",\"white\",\"red\")))",sep="")
-	  }	 
+		  	
+	  	if(length(Heatmap_gene.inx_List[[i]])>=3)
+	  	{
+		#Heatmaply_TEXT[i] = paste("heatmaply(Fpkm.table.New.txt[Heatmap_gene.inx_List[[",i,"]],combined.fpkm.inx],scale=\"row\",xlab = GO.exmp[",i,"],colors = colorRampPalette(colors = c(\"blue\",\"white\",\"red\")))",sep="")
+		
+					
+				ROW.INDEX = as.numeric(unlist(Heatmap_gene.inx_List[[i]]))
+							
+				Heatmaply_TEXT = c(Heatmaply_TEXT,paste("heatmaply(Fpkm.table.New.txt[", paste("c(",paste(ROW.INDEX,collapse = ","),")",sep=""),",combined.fpkm.inx],scale=\"row\",xlab = GO.exmp[",i,"],colors = colorRampPalette(colors = c(\"blue\",\"white\",\"red\")))",sep=""))
+				
+		}#if(length(Heatmap_gene.inx_List[[i]])>=3)
+	  }#	for(i in 1:length(GO.exmp.IDs)) 
 
 	  print(Heatmaply_TEXT)
-	  
-	  Final_PLOT_Text = paste("subplot(",paste(Heatmaply_TEXT,collapse = ","),",nrows = ceiling(length(GO.exmp.IDs)/3), titleX = T, shareY = F, shareX = F)")
+	   print(length(Heatmaply_TEXT))
+	    
+	  if(length(Heatmaply_TEXT) > 1 & length(unique(combined.fpkm.inx)) >= 2 )
+	  {
+	  	Final_PLOT_Text = paste("subplot(",paste(Heatmaply_TEXT,collapse = ","),",nrows = ceiling(length(Heatmaply_TEXT)/3), titleX = T, shareY = F, shareX = F)")
+	    print(Final_PLOT_Text)
+	  	#eval(parse(text=Final_PLOT_Text))
+	  }#if(length(Heatmaply_TEXT) > 1)
+	  if(length(Heatmaply_TEXT) == 1 & length(unique(combined.fpkm.inx)) >= 2 )
+	  {
+	    Final_PLOT_Text = Heatmaply_TEXT 
+	    print(Final_PLOT_Text)
+	    #eval(parse(text=Final_PLOT_Text))
+
+	  }#if(length(Heatmaply_TEXT) == 1)
+	  if(length(Heatmaply_TEXT) == 0 | length(unique(combined.fpkm.inx)) <= 1 )
+	  {
+	  	Final_PLOT_Text  = "heatmaply(matrix(c(0,0,0,0),nrow = 2))"
+	  	print(Final_PLOT_Text)
+	  }#if(length(Heatmaply_TEXT) == 0)
+
 	  eval(parse(text=Final_PLOT_Text))
+
+
         })#output$GO_Heatmap_rowScale <- renderPlotly({
+        	
+        	
    #################################
    
    print("output$GO_Heatmap ")
-          output$GO_Heatmap <- renderPlot({
+          output$GO_Heatmap <- renderPlotly({
             ############################
             ########################
-            par(mfrow=c(1,1))
-            pheatmap_List = c()
-            for(i in 1:length(GO.exmp.IDs))
-            {
-              GO_Pheatmap = pheatmap(Fpkm.table.New.txt[Heatmap_gene.inx_List[[i]],combined.fpkm.inx],scale="none",fontsize_row = 6*Font_Adjust,show_rownames = T,show_colnames = T,main = paste(GO.exmp[i],"(",GO.exmp.IDs[i],")",sep="") )
-              pheatmap_List = c(pheatmap_List,list(GO_Pheatmap[[4]]))
-            }#for(i in 1:length(GO.exmp.IDs))
-	    Report.List.Reads <<- c(Report.List.Reads,pheatmap_List)  
-            do.call(grid.arrange,c(pheatmap_List,ncol=3, nrow=ceiling(length(pheatmap_List)/3)))
+ #           Font_Adjust = input$GO.Font_Size
+ #           par(mfrow=c(1,1))
+ #           pheatmap_List = c()
+ #           for(i in 1:length(GO.exmp.IDs))
+ #           {
+ #           		print(length(Heatmap_gene.inx_List[[i]]))
+ #           		if(length(Heatmap_gene.inx_List[[i]])>=3)
+ #           		{
+ #             		GO_Pheatmap = pheatmap(Fpkm.table.New.txt[Heatmap_gene.inx_List[[i]],combined.fpkm.inx],scale="none",fontsize_row = 6*Font_Adjust,show_rownames = T,show_colnames = T,main = #paste(GO.exmp[i],"(",GO.exmp.IDs[i],")",sep="") )
+ #             		pheatmap_List = c(pheatmap_List,list(GO_Pheatmap[[4]]))
+ #             	}#if(length(Heatmap_gene.inx_List[[i]])>=3)
+ #           }#for(i in 1:length(GO.exmp.IDs))
+#	    		Report.List.Reads <<- c(Report.List.Reads,pheatmap_List)  
+ #           do.call(grid.arrange,c(pheatmap_List,ncol=3, nrow=ceiling(length(pheatmap_List)/3)))
+ 
+ 
+             par(mfrow=c(1,1))
+
+	  Heatmaply_TEXT = c()
+	  for(i in 1:length(GO.exmp.IDs))
+	  {
+	  	if(length(Heatmap_gene.inx_List[[i]])>=3)
+	  	{
+				ROW.INDEX = as.numeric(unlist(Heatmap_gene.inx_List[[i]]))
+						
+				Heatmaply_TEXT = c(Heatmaply_TEXT,paste("heatmaply(Fpkm.table.New.txt[", paste("c(",paste(ROW.INDEX,collapse = ","),")",sep=""),",combined.fpkm.inx],xlab = GO.exmp[",i,"],colors = colorRampPalette(colors = c(\"blue\",\"white\",\"red\")))",sep=""))
+				
+		}#if(length(Heatmap_gene.inx_List[[i]])>=3)
+	  }#	for(i in 1:length(GO.exmp.IDs)) 
+
+	    
+	  if(length(Heatmaply_TEXT) > 1 & length(unique(combined.fpkm.inx)) >= 2 )
+	  {
+	  	Final_PLOT_Text = paste("subplot(",paste(Heatmaply_TEXT,collapse = ","),",nrows = ceiling(length(Heatmaply_TEXT)/3), titleX = T, shareY = F, shareX = F)")
+	    print(Final_PLOT_Text)
+	  	#eval(parse(text=Final_PLOT_Text))
+	  }#if(length(Heatmaply_TEXT) > 1)
+	  if(length(Heatmaply_TEXT) == 1 & length(unique(combined.fpkm.inx)) >= 2 )
+	  {
+	    Final_PLOT_Text = Heatmaply_TEXT 
+	    print(Final_PLOT_Text)
+	    #eval(parse(text=Final_PLOT_Text))
+
+	  }#if(length(Heatmaply_TEXT) == 1)
+
+print("new	")
+ 	  if(length(Heatmaply_TEXT) == 0 | length(unique(combined.fpkm.inx)) <= 1 )     
+	  {
+	  	Final_PLOT_Text = "heatmaply(matrix(c(0,0,0,0),nrow = 2))"  	
+	  }#if(length(Heatmaply_TEXT) == 0)
+
+	
+ 	 eval(parse(text=Final_PLOT_Text))
+ 
+ 
           })#output$GO_Heatmap <- renderPlot({
           ###########
 
@@ -5599,7 +5714,7 @@ print("output$GO_Distribution ")
           
 
         ##########################
-     }#if(length(GO_genes.inx)>0)   
+     }#if(length(Group_GO_Values)>0)   
     }#if(length(GO.exmp)>0 & length(Test.fpkm)>0 & length(Control.fpkm)>0 & nchar(RPKM.threshold)>0))
       
     progress$inc(1, detail = paste("Progress: ",99,"%",sep=""))
@@ -7105,7 +7220,7 @@ print("output$GO_Distribution ")
       
       output$Group_Stats_log2RPKM <- renderPlotly({
         plot_ly(x=log2(apply(Control.data, MARGIN = 1, function(x) median(x))),y=log2(apply(Treatment.data, MARGIN = 1, function(x) median(x))),text = Gene_Names) %>%
-          layout(autosize = F, width = 600, height = 600, margin = plotlyMargins ,showlegend = FALSE,xaxis = list(title = paste(Control.Label,"log2(RPKM)"),range=c(MIN.dim,MAX.dim)),yaxis = list(title = paste(Treatment.Label,"log2(RPKM)"),range=c(MIN.dim,MAX.dim)))
+          layout(autosize = F, width = 600, height = 600, margin = plotlyMargins ,showlegend = FALSE,xaxis = list(title = paste(Control.Label,"log2(Expression)"),range=c(MIN.dim,MAX.dim)),yaxis = list(title = paste(Treatment.Label,"log2(Expression)"),range=c(MIN.dim,MAX.dim)))
       
       })#output$Group_Stats_log2RPKM <- renderPlotly({
       
@@ -7204,7 +7319,7 @@ print("output$GO_Distribution ")
             }#for(j in 1:ncol(Control.data))
             plot(plot.coords,xlim=c(min(plot.coords),max(plot.coords)),ylim=c(min(plot.coords),max(plot.coords)),pch=16,cex=0.75,main=Gene_Names[g],xlab = Control.Label,ylab = Treatment.Label,cex.lab=0.7)
             lines(rbind(c((min(plot.coords)-5),(min(plot.coords)-5)),c((max(plot.coords)+5),(max(plot.coords)+5))),lty=2)
-            boxplot(unlist(Control.data[g,]),unlist(Treatment.data[g,]), main=Gene_Names[g],names=c(Control.Label.bp,Treatment.Label.bp),las=2,ylab="RPKM",cex.axis=0.7)
+            boxplot(unlist(Control.data[g,]),unlist(Treatment.data[g,]), main=Gene_Names[g],names=c(Control.Label.bp,Treatment.Label.bp),las=2,ylab="Expression",cex.axis=0.7)
           
             plot.coords.norm = (plot.coords-min(plot.coords))/(max(plot.coords)-min(plot.coords))
             
@@ -7293,7 +7408,7 @@ print("output$GO_Distribution ")
               }#for(j in 1:ncol(Control.data))
               plot(plot.coords,xlim=c(min(plot.coords),max(plot.coords)),ylim=c(min(plot.coords),max(plot.coords)),pch=16,cex=0.75,main=Gene_Names[g],xlab = Control.Label,ylab = Treatment.Label,cex.lab=0.7)
               lines(rbind(c((min(plot.coords)-5),(min(plot.coords)-5)),c((max(plot.coords)+5),(max(plot.coords)+5))),lty=2)
-              boxplot(unlist(Control.data[g,]),unlist(Treatment.data[g,]), main=Gene_Names[g],names=c(Control.Label.bp,Treatment.Label.bp),las=2,ylab="RPKM",cex.axis=0.7)
+              boxplot(unlist(Control.data[g,]),unlist(Treatment.data[g,]), main=Gene_Names[g],names=c(Control.Label.bp,Treatment.Label.bp),las=2,ylab="Expression",cex.axis=0.7)
         
              }#for(k in 1:length(g.indx))
             
