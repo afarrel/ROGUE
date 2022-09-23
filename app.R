@@ -33,6 +33,7 @@ library(reshape2)
 library(rintrojs)
 library(DESeq2)
 library(uwot)
+library(shinyalert)
 
 options(shiny.maxRequestSize=50*1024^2)  # Limits file upload size to 50 MB
 
@@ -155,6 +156,13 @@ GENE_Symbol_Ensembl = read.delim("Data/GSEA/bioDBnet_db2db.txt")
 ### End of Gene Enrichment Data GSEA ####
 #########################################
 
+  load_data <- function() {
+    Sys.sleep(2)
+    hide("loading_page")
+    show("main_content")
+  }
+  
+
 sidebar <- dashboardSidebar(width = 250,
 
 fluidRow(column(width=8,shiny::actionButton(inputId='ab1', label="View ROGUE Manual",
@@ -187,7 +195,7 @@ fluidRow(column(width=8,shiny::actionButton(inputId='ab1', label="View ROGUE Man
 )#sidebar <- dashboardSidebar(
 
 #.left-side, .main-sidebar {padding-top: 100px}
-body <- dashboardBody(introjsUI(),
+body <- dashboardBody(introjsUI(),useShinyjs(),
 			tags$head(tags$style(HTML('
 			
 				left-side, .main-sidebar {padding-top: 75px}
@@ -248,45 +256,68 @@ body <- dashboardBody(introjsUI(),
 				
 				sidebarLayout(
                    sidebarPanel(
-                     h5(
-                        fileInput("file1", "Choose Reads File",
-                               accept = c(
-                                 "text/csv",
-                                 "text/comma-separated-values,text/plain",
-                                 ".csv")#accept = c(
-                      ),  #fileInput("file1", "Choose Reads File",
-                      id = "h4file1"),
-                      h5(
-                        radioButtons(inputId = "Reads.Select_input",label = "Select Input Source",choices = c("Database"="dbase","Upload File"="upload"),selected = "dbase"),
-                       id = "h4ReadsSelectInput"),
-                     h5(id = "h4ReadsDataUser",selectInput(inputId="Reads.Data_User", label="Select Data Library", c(Reads.Data.folder.files), selected = NULL, multiple = F)),                     
-                     h5(id = "h4ReadsDataset",selectInput(inputId="Reads.Data_set", label="Select Dataset", c(""), selected = NULL, multiple = F)),
+                   
+                     h5( radioButtons(inputId = "Reads.Select_input",label = "Select Input Source",choices = c("Upload File"="upload","Database"="dbase"),selected = "upload"),id = "h4ReadsSelectInput"),
+                     
+                     hidden(
+                      	div(id = "file1_Box_wrapper",
+                      		box(id = "file1_Box", title = "Select a counts/reads file", width = '200px',                        		                   
+    		                  		h5(
+                        				fileInput("file1", "Choose Reads File",
+                               					accept = c(
+                                 				"text/csv",
+                                 				"text/comma-separated-values,text/plain",
+                                 				".csv")#accept = c(
+                      						),  #fileInput("file1", "Choose Reads File",
+                      					id = "h4file1")
+                      ))),#hidden(div(id = "file1_Box_wrapper"
+                      
+                      hidden(
+                      	div(id = "Sample_Select_Box_wrapper",
+                      		box(id = "Sample_Select_Box", title = "Sample Selection (Max 20)", width = '200px',                      
+    		                  		h5(id="h4Sample_Select_Box", selectizeInput(inputId = "Reads.Library_select",label = "Select Samples",choices = c(""),options = list(maxItems = 20), selected = NULL, multiple = T))
+                      ))),#hidden(div(id = "Sample_Select_Box_wrapper"
+                      
+                      hidden(
+                      	div(id = "Reads_Database_Box_wrapper",
+                      		box(id = "Sample_Reads_Database_Box", title = "Select a counts/reads file", width = '200px',   
+                   
+                    	 		h5(id = "h4ReadsDataUser",selectInput(inputId="Reads.Data_User", label="Select Data Library", c(Reads.Data.folder.files), selected = NULL, multiple = F)),                     
+                    	 		h5(id = "h4ReadsDataset",selectInput(inputId="Reads.Data_set", label="Select Dataset", c(""), selected = NULL, multiple = F))
+                     
+                     ))),#hidden(div(id = "Reads_Database_Box_wrapper"
+                     
                      h5(id = "h4ReadsRawNorm",radioButtons(inputId = "Reads.Raw_Norm",label = "Select Reads Status",choices = c("Raw"="Raw","Normalized"="Normalized"),selected = "Raw",inline = T)),         
                      h5(id = "h4ReadsLoadData",actionButton(inputId="Reads.Load_Data", label="Load Data")),
-                     h5(id = "h4AddData",fluidRow(
-                       column(width=3,checkboxInput(inputId="Reads.Add_Data_Check", label="Add data", TRUE)),column(width=2,actionButton(inputId="Reads.Add_Data", label="Add File")),column(width=2,actionButton(inputId="Reads.Reset_Add_Data", label="Reset")))),
+                     #h5(id = "h4AddData",fluidRow(
+                     #  column(width=3,checkboxInput(inputId="Reads.Add_Data_Check", label="Add data", FALSE)),column(width=2,actionButton(inputId="Reads.Add_Data", label="Add File")),column(width=2,actionButton(inputId="Reads.Reset_Add_Data", label="Reset")))),
                      textOutput("Reads.User_Data_File"),
                      textOutput("Reads.User_Data_Info"),
                      #tags$hr(),
                      #checkboxInput("header", "Header", TRUE),
-                     h5(id = "h4Comparison",selectInput(inputId="Comparison", label="Select 2 Samples", c("No Samples Loaded"), multiple = T)),
-                     h5(id = "h4EdgeR_DEseq",radioButtons(inputId="Reads.EdgeR_DEseq",label = "Select Method",choices = c("EdgeR"="EdgeR","DESeq2"="DESeq2"),selected = "EdgeR",inline = T)),
-                     h5(id = "h4CompareButton",actionButton(inputId="CompareButton", label="Compare Samples")),
-                     h5(id = "h4Log2FCThreshold",textInput(inputId="Log2FCThreshold", label="Log2FC", value = "1", width = '60px', placeholder = NULL)),
-                     h5(id = "h4FDRPvalThreshold",textInput(inputId="FDR_PvalThreshold", label="P-value", value = "0.05", width = '60px', placeholder = NULL)),
-                     h5(id = "h4PvalCorrection",selectInput(inputId="Pval_Correction", label="P-value correction method", c("none","BH", "fdr","BY","holm"), selected = "none", multiple = F)),
-		     h5(id = "h4ReadsPlotWidths",sliderInput(inputId = "Reads.Plot_Widths",label = "Plot Widths",min =1 ,max = 10,value = 10)),
-		     h5(id = "h4ReadsVolcanoGenes",sliderInput(inputId = "Reads.Volcano_Genes",label = "Show Volcano Plot Genes",min =0 ,max = 200,value = 20)),
-		     h5(id = "h4ReadsVolcanoFontSize",sliderInput(inputId = "Reads.Volcano_Font_Size",label = "Volcano Plot Font Size",min = 0,max = 10,value = 2)),
-		     h5(id = "h4ReadsHeatmapFontSize",sliderInput(inputId = "Reads.Heatmap_Font_Size",label = "Heatmap Font Size",min = 0,max = 15,value = 5)),
-		     h5(id = "h4ReadsHeatmapSamples",radioButtons(inputId = "Reads.Heatmap_Samples",label = "Heatmap Samples",choices = c("Compared Samples","All Samples"),inline = T,selected = "Compared Samples")),
-	
-                   ),#sidebarPanel(
+                     
+                     hidden(
+                      	div(id = "Comparison_Box_wrapper",
+                      		box(id = "Comparison_Box", title = "Sample Selection (Max 2)", width = '200px',    
+                     
+                     			h5(id = "h4Comparison",selectInput(inputId="Comparison", label="Select 2 Samples", c("No Samples Loaded"), multiple = T)),
+                     			h5(id = "h4EdgeR_DEseq",radioButtons(inputId="Reads.EdgeR_DEseq",label = "Select Method",choices = c("EdgeR"="EdgeR","DESeq2"="DESeq2"),selected = "EdgeR",inline = T)),
+                     			h5(id = "h4CompareButton",actionButton(inputId="CompareButton", label="Compare Samples")),
+                     			h5(id = "h4Log2FCThreshold",textInput(inputId="Log2FCThreshold", label="Log2FC", value = "1", width = '60px', placeholder = NULL)),
+                     			h5(id = "h4FDRPvalThreshold",textInput(inputId="FDR_PvalThreshold", label="P-value", value = "0.05", width = '60px', placeholder = NULL)),
+                     			h5(id = "h4PvalCorrection",selectInput(inputId="Pval_Correction", label="P-value correction method", c("none","BH", "fdr","BY","holm"), selected = "none", multiple = F)),                                       
+		     					h5(id = "h4ReadsPlotWidths",sliderInput(inputId = "Reads.Plot_Widths",label = "Plot Widths",min =1 ,max = 10,value = 10)),
+		    				 		h5(id = "h4ReadsVolcanoGenes",sliderInput(inputId = "Reads.Volcano_Genes",label = "Show Volcano Plot Genes",min =0 ,max = 200,value = 20)),
+		     					h5(id = "h4ReadsVolcanoFontSize",sliderInput(inputId = "Reads.Volcano_Font_Size",label = "Volcano Plot Font Size",min = 0,max = 10,value = 2)),
+		     					h5(id = "h4ReadsHeatmapFontSize",sliderInput(inputId = "Reads.Heatmap_Font_Size",label = "Heatmap Font Size",min = 0,max = 15,value = 5)),
+		     					h5(id = "h4ReadsHeatmapSamples",radioButtons(inputId = "Reads.Heatmap_Samples",label = "Heatmap Samples",choices = c("Compared Samples","All Samples"),inline = T,selected = "Compared Samples"))
+	 				)))#hidden(div(id = "Comparison_Box_wrapper"
+                  ),#sidebarPanel(
                    
                    mainPanel(
                      tabsetPanel(
                        tabPanel("Summary_plots", 
-                                plotOutput("MDSPlot"),
+                                plotlyOutput("MDSPlot",height = "600px",width = "600px"),
                                 plotlyOutput("ComparePlot1",height = "500px",width = "500px"),
                                 plotOutput("ComparePlot2"),
                                 plotOutput("ComparePlot3"),
@@ -348,21 +379,42 @@ body <- dashboardBody(introjsUI(),
      	 width = 10, solidHeader = TRUE, 
       	uiOutput("boxContentExpression"),
 
-					sidebarLayout(
-                 	  sidebarPanel(
-                  	  h5(id="h4FileInput",fileInput("file_RPKM", "Choose Expression File",
+			 sidebarLayout(
+               sidebarPanel(
+                 	  
+                 	  
+                 h5(id="h4SelectInput",radioButtons(inputId = "Select_input",label = "Select Input Source",choices = c("Upload File"="upload","Database"="dbase"),selected = "upload")), 
+                 	  
+                 hidden(
+                   div(id = "file_RPKM_Box_wrapper",
+                     box(id = "file_RPKM_Box", title = "Select an Exppression file", width = '200px',   
+                 	  
+                 	  
+                  	  h5(id="h4FileInput",fileInput("file_RPKM", "Choose Expression File (FPKM/RPKM/TPM)",
                              accept = c(
                                "text/csv",
                                "text/comma-separated-values,text/plain",
                                ".csv",".rda","RData")
-                    )),
-                    
-  	                h5(id="h4SelectInput",radioButtons(inputId = "Select_input",label = "Select Input Source",choices = c("Database"="dbase","Upload File"="upload"),selected = "dbase")),        
-                    h5(id="h4DataUser",selectInput(inputId="Data_User", label="Select Data Library", c(Data.folder.files), selected = NULL, multiple = F)),
-                    h5(id="h4DataSet",selectInput(inputId="Data_set", label="Select Dataset", c(""), selected = NULL, multiple = F)),
+                    		))#h5(id="h4FileInput",fileInput("file_RPKM", "Choose Expression File",
+                    		
+                    ))),#hidden(div(id = "file1_Box_wrapper"
+  	                      
+  	              hidden(
+                   div(id = "FPKM_Database_Box_wrapper",
+                     box(id = "FPKM_Database_Box", title = "Select a counts/reads file", width = '200px',    
+  	                       	                      
+                    		h5(id="h4DataUser",selectInput(inputId="Data_User", label="Select Data Library", c(Data.folder.files), selected = NULL, multiple = F)),
+                    		h5(id="h4DataSet",selectInput(inputId="Data_set", label="Select Dataset", c(""), selected = NULL, multiple = F))
+                    	))),#hidden(div(id = "FPKM_Database_Box_wrapper"	
+                    		
                     h5(id="h4LoadFile",actionButton(inputId = "Load_File",label = "Load File")),
-                    h5(id="h4RPKMAddDataCheck",fluidRow(
-                        column(width=3,checkboxInput(inputId="RPKM.Add_Data_Check", label="Add data", TRUE)),column(width=2,actionButton(inputId="RPKM.Add_Data", label="Add File")),column(width=2,actionButton(inputId="RPKM.Reset_Add_Data", label="Reset"))))
+                    
+                  hidden(
+                  	 div(id = "FPKM_ADD_FILE_Box_wrapper",
+                    		 box(id = "FPKM_ADD_FILE_Box", title = "Select a counts/reads file", width = '200px'   
+                    			#h5(id="h4RPKMAddDataCheck",fluidRow(
+                       	#column(width=3,checkboxInput(inputId="RPKM.Add_Data_Check", label="Add data", FALSE)),column(width=2,actionButton(inputId="RPKM.Add_Data", label="Add File")),column(width=2,actionButton(inputId="RPKM.Reset_Add_Data", label="Reset"))))
+                    	))),#hidden(div(id = "FPKM_ADD_FILE_Box_wrapper"	   	
                    
                     ),#sidebarPanel
                  
@@ -704,7 +756,7 @@ body <- dashboardBody(introjsUI(),
                                      h5(id = "h4Group2StatCompare",selectInput(inputId = "Group2_Stat_compare",label = "Select Group2",choices = c(""), selected = NULL, multiple = F)),
                                      h5(id = "h4StatTestSelect",checkboxGroupInput(inputId = "Stat_Test_Select",label=h5("Select Tests"),choices = c("Fold Change","Mean/SD","Wilcox","Ttest"),
                                                         selected = c("Fold Change","Mead/SD"))),
-                                     h5(id = "h4GroupStatAnalyisButton",actionButton(inputId = "Group_Stat_analyis_button",label = "Find Genes")),
+                                     h5(id = "h4GroupStatAnalyisButton",actionButton(inputId = "Group_Stat_analysis_button",label = "Find Genes")),
                                      h5(id = "h4GroupStatPValThresh",sliderInput(inputId = "Group_Stat_PVal_Thresh",label = "Select Pvalue",min = 0,max = 1,value = 0.05,step = 0.001)),
                                      h5(id = "h4GroupStatRPKMThresh",textInput(inputId = "Group_Stat_RPKM_Thresh",label = "Min Expression", value = 5,width = '60px')),
                                      h5(id = "h4GroupStatFCThresh",textInput(inputId = "Group_Stat_FC_Thresh",label = "Min log2FC", value = 2,width = '60px')),
@@ -748,7 +800,7 @@ body <- dashboardBody(introjsUI(),
       												uiOutput("boxContent_T_SNE"),
 
 												h5(id = "h4GroupStatsSelectMethod", radioButtons(inputId = "Group_Stats_Select_Method",label = "Select Dimension Reduction Method",choices = c("tSNE"="tSNE","PCA"="PCA","UMAP"="UMAP"),inline = T,selected = "tSNE")),
-                                                h5(id = "h4GroupStatsRunTSNE", actionButton(inputId = "Group_Stats_Run_tSNE",label = "Run t-SNE")),
+                                                h5(id = "h4GroupStatsRunTSNE", actionButton(inputId = "Group_Stats_Run_tSNE",label = "Run")),
 												h5(id = "h4SelectTSNEObject", radioButtons(inputId = "Select_tSNE_Object",label = "Select t-SNE Analysis",choices = c("All Samples"="SAMPLES","Genes"="GENES"),selected = "SAMPLES")),
                                                 fluidRow(column(width=4,h5(id = "h4GroupStatsTSNEMaxIter", sliderInput(inputId = "Group_Stats_tSNE_max_iter",label="Choose t-SNE max iterations", min = 100, max = 1000, value = 1000, step = 100)))),
                                                 fluidRow(
@@ -917,17 +969,110 @@ body <- dashboardBody(introjsUI(),
 #Group.Members=c()
 #GeneList=c()
 # Define server logic required to draw a histogram
-server <- function(input,output,session,DATA.Values,DATA.Values.5min=c(),Groups,Group.Members=c(),GeneList,Reads.Data_File_path,readData,pengRPKMTable, Group.GTable,Gene.Choices=c(),PRE_GROUPS="",Reads_Reset=F,DATA.Values_Flag=F) {
+server <- function(input,output,session,DATA.Values,DATA.Values.5min=c(),Groups,Group.Members=c(),GeneList,Reads.Data_File_path,readData,pengRPKMTable=c(), Group.GTable,Gene.Choices=c(),PRE_GROUPS="",Reads_Reset=F,DATA.Values_Flag=F) {
+
+
+
+observeEvent(input$Reads.Select_input,{
+	
+		if(input$Reads.Select_input=="upload")
+		{
+			shinyjs::hide(id = "Reads_Database_Box_wrapper")
+			shinyjs::show(id = "file1_Box_wrapper")	
+			if(length(input$Reads.Library_select) >= 1)
+			{
+				shinyjs::show(id = "Sample_Select_Box_wrapper")	
+			}#if(length(input$Reads.Library_select) >= 1)
+					
+		}#if(input$Reads.Select_input=="upload")
+		
+		if(input$Reads.Select_input=="dbase")
+		{
+			shinyjs::hide(id = "file1_Box_wrapper")
+			shinyjs::hide(id = "Sample_Select_Box_wrapper")
+			shinyjs::show(id = "Reads_Database_Box_wrapper")
+		}#if(input$Reads.Select_input=="dbase")
+	
+	})#observeEvent(input$Reads.Select_input,{
+
+
+#Data_set_RPKM_Box_wrapper
+#h5(id="h4SelectInput",radioButtons(inputId = "Select_input",label = "Select Input Source",choices = c("Database"="dbase","Upload File"="upload"),selected = "dbase")), 
+
+observeEvent(input$Select_input,{
+	
+		if(input$Select_input =="upload")
+		{
+			shinyjs::hide(id = "FPKM_Database_Box_wrapper")
+			shinyjs::show(id = "file_RPKM_Box_wrapper")	
+		
+		}#if(input$Select_input =="upload")
+		
+		if(input$Select_input =="dbase")
+		{
+			shinyjs::hide(id = "file_RPKM_Box_wrapper")
+			shinyjs::show(id = "FPKM_Database_Box_wrapper")
+		}#if(input$Reads.Select_input=="dbase")
+	
+	})#observeEvent(input$Select_input,{
+
+
+observeEvent(input$file1,{
+	
+		inFile <- input$file1
+		if(is.null(inFile))
+		{
+			shinyjs::hide(id = "Sample_Select_Box_wrapper")
+		}
+		if(!is.null(inFile))
+		{
+		 	file.datapath <<- inFile$datapath
+     		if(file.exists(file.datapath) && !dir.exists(file.datapath)) 
+     		{
+     			File.Check = readLines(file.datapath)
+     			if(length(File.Check)==0)
+     			{
+     				shinyjs::hide(id = "Sample_Select_Box_wrapper")
+     	  			return(NULL)
+     	  		}
+     	
+     		    Data_5 = read.delim(file.datapath,nrow=5)[,-1]       		    
+     		    Sample_Names = colnames(Data_5)      
+     		    
+     		    N = ifelse(8<length(Sample_Names),8,length(Sample_Names))
+     		    
+     		    if(N >0) shinyjs::show(id = "Sample_Select_Box_wrapper")
+     		    
+     		    #selectInput(inputId="Reads.Library_select", label="Select Dataset", c(""), selected = NULL, multiple = F),
+  	     		updateSelectizeInput(session, inputId = "Reads.Library_select", label = "Select Samples", choices = Sample_Names,selected = Sample_Names[1:N], server = TRUE)
+
+			}#if(file.exists(file.datapath) && !dir.exists(file.datapath)) 
+		}#if(!is.null(inFile))
+	
+	})#observeEvent(input$file1,{
+
+
+
 
 
   
   
  observeEvent(input$Counts_EdgeR_help, {
     if (input$TABS == "Count_EdgeR_Data") {
+    			shinyjs::delay(ms = 500,shinyjs::show(id = "file1_Box_wrapper") )
+    			#shinyjs::show(id = "file1_Box_wrapper")
+    		shinyjs::delay(ms = 500,shinyjs::show(id = "Sample_Select_Box_wrapper"))
+			#shinyjs::show(id = "Sample_Select_Box_wrapper")
+			shinyjs::delay(ms = 500,shinyjs::show(id = "Reads_Database_Box_wrapper"))
+			#shinyjs::show(id = "Reads_Database_Box_wrapper")
+			shinyjs::delay(ms = 500,shinyjs::show(id = "Comparison_Box_wrapper"))
+			
+
       rintrojs::introjs(session, options = list(
-        steps = data.frame(element = c("#h4ReadsSelectInput","#h4file1","#h4ReadsDataUser","#h4ReadsDataset","#h4ReadsRawNorm","#h4ReadsLoadData","#h4Comparison","#h4CompareButton","#h4Log2FCThreshold","#h4FDRPvalThreshold","#h4PvalCorrection","#h4ReadsPlotWidths","#h4ReadsVolcanoGenes","#h4ReadsVolcanoFontSize","#h4ReadsHeatmapFontSize","#h4ReadsHeatmapSamples","#h4AddData"),
+        steps = data.frame(element = c("#h4ReadsSelectInput","#h4file1","#h4Sample_Select_Box","#h4ReadsDataUser","#h4ReadsDataset","#h4ReadsRawNorm","#h4ReadsLoadData","#h4Comparison","#h4CompareButton","#h4Log2FCThreshold","#h4FDRPvalThreshold","#h4PvalCorrection","#h4ReadsPlotWidths","#h4ReadsVolcanoGenes","#h4ReadsVolcanoFontSize","#h4ReadsHeatmapFontSize","#h4ReadsHeatmapSamples"),
                    intro = c("Select whether you will upload a Reads/Counts file or select one from the database.",
                              "If you selected 'Upload File' use this button to browse for a file.",
+                             "If you upload a file, select the samples you would like to include in the analysis. The maximum number of samples for this function is limited to maintain a manageable load for the server.",
                              "If you selected 'Database' Choose a 'Data Library'.",
                              "If you selected 'Database' Choose a dataset from the above 'Data Library'.",
                              "Select whether the files Reads/Counts are raw or normalized.",                             
@@ -941,25 +1086,29 @@ server <- function(input,output,session,DATA.Values,DATA.Values.5min=c(),Groups,
 					    "Select number of top differentially expressed genes to show on volcano plot.",
 					    "Adjust font size on volcano plot.",
 					    "Adjust font size on heatmaps then click 'Compare Samples' button again.",
-					    "Select if heatmaps comparing differentially expressed genes should display the two compared samples only or all the samples in the dataset.",					    
-					    "If you want to add multiple datasets, click 'Add File' button then repeat the first 3 steps and click 'Add File' again."
+					    "Select if heatmaps comparing differentially expressed genes should display the two compared samples only or all the samples in the dataset."	
                              
                              ))#intro = c(
       ))#rintrojs::introjs(session, options = list(
+
     }#if (input$TABS == "Count_EdgeR_Data") {
   })#observeEvent(input$intro, {
 
   
   observeEvent(input$Expression_load_help,{
   if (input$TABS == "Expression_Data") {    
+  			
+  			shinyjs::show(id = "FPKM_Database_Box_wrapper")
+			shinyjs::show(id = "file_RPKM_Box_wrapper")	
+
+  	
       rintrojs::introjs(session, options = list(
-        steps = data.frame(element = c("#h4SelectInput", "#h4FileInput","#h4DataUser","#h4DataSet","#h4LoadFile","#h4RPKMAddDataCheck"),
+        steps = data.frame(element = c("#h4SelectInput", "#h4FileInput","#h4DataUser","#h4DataSet","#h4LoadFile"),
                            intro = c("Select whether you will upload an expression file or select one from the database.",
                                      "If you selected 'Upload File' use this button to browse for a file.",
                                      "If you selected 'Database' Choose a 'Data Library'.",
                                      "If you selected 'Database' Choose a Dataset from the above 'Data Library'.",
-                                     "Click 'Load File' to load the selected expression data.",
-                                     "If you want to add multiple datasets, click 'Add File' button then repeat the first 3 steps and click 'Add File' again."
+                                     "Click 'Load File' to load the selected expression data."
                                      
                                      ))#steps = data.frame(element = c(
       ))#rintrojs::introjs(session, options = list(
@@ -1108,7 +1257,7 @@ server <- function(input,output,session,DATA.Values,DATA.Values.5min=c(),Groups,
         steps = data.frame(element = c("#h4SelectTSNEObject", "#h4GroupStatsTSNEMaxIter","#h4GroupStatsRunTSNE", "#h4GroupStatsTSNESeed", "#h4GroupStatsTSNEPointSize", "#h4GenerateTSNEList", "#h4GroupStatsTSNEGeneList", "#h4GroupStatsTSNEGene","#h4GroupStatsTSNEGroup"),
                            intro = c("Select whether to perform t-SNE on samples based on gene expression or genes based on expression pattern among samples.",
                                      "Select the maximum iterations for the t-SNE function.",
-                                     "Click 'Run t-SNE' to perform the t-SNE analysis. t-SNE plots will be generated below.",
+                                     "Click 'Run' to perform the t-SNE analysis. t-SNE plots will be generated below.",
 					    		  	 "Change 'seed' to change t-SNE plot.",
 					    		  	 "Adjust the point size on the t-SNE plot.",
 					    		     "Check to generate p-values representing relative distance of points from each other. This functions takes a long time to perform depending on the dataset.",
@@ -1317,9 +1466,28 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
         if(file.exists(Data_File_path) & !dir.exists(Data_File_path)) {File.Check = readLines(Data_File_path)}
     if(length(File.Check)==0 | nchar(Data_File_path)==0 | is.null(Data_File_path) | dir.exists(Data_File_path))
     {
-          enable("Load_File")
+      enable("Load_File")
       return(NULL)
     }
+    
+     
+     if(length(File.Check) < 2)
+     {
+       enable("Load_File")
+       shinyalert(title = "File format error",text = "Check file format\n\nPlease use a TAB-delimited file with the below format:\n\n Genes  Sample1  Sample2\nGene1 Value_1 Value_2\nGene2 Value_1 Value_2", type = "error")
+       return(NULL)
+     }
+     
+     
+     File.Check_columns = sapply(File.Check,function(X) length(strsplit(X,split = "\t")[[1]]))
+
+	 if(!all(File.Check_columns == File.Check_columns[1] & File.Check_columns[1] >= 2))
+	 {
+	   enable("Load_File")
+	   shinyalert(title = "ERROR: Check file format\n\nPlease use a TAB-delimited file with the below format:\n\n Genes  Sample1  Sample2\nGene1 Value_1 Value_2\nGene2 Value_1 Value_2", type = "error")
+       return(NULL)
+	 }
+    
 
     progress$inc(0.5, detail = "Please Wait")
     Sys.sleep(0.001)
@@ -1332,7 +1500,7 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
 
      DATA1=c("")
 
-     if(nchar(input$Data_set)>1 | length(File.Check)!=0 | (input$RPKM.Add_Data_Check & length(RPKM_FILE_LIST)>0)) {
+     if(nchar(input$Data_set)>1 | length(File.Check)!=0 ) {
 
 
     readData <<- c()
@@ -1359,7 +1527,7 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
     updateSelectizeInput(session, inputId = "Query_GSEA_Test",label = "Select Query",choices = c(""), selected = NULL)
 
     
-    output$MDSPlot <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
+    output$MDSPlot <- renderPlotly(plot_ly())
     output$ComparePlot1 <- renderPlotly(plot_ly())
     output$ComparePlot2 <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
     output$ComparePlot3 <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
@@ -1410,13 +1578,9 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
     
     #isolate(Reads.data.file.name <- Reads.data.file.name())
  
-     if(input$RPKM.Add_Data_Check & length(RPKM_FILE_LIST)>0)
-     {
-     	DATA.RAW = RPKM_TABLE_DATA_added
-     	
-     }
+
      
-     if(!input$RPKM.Add_Data_Check | length(RPKM_FILE_LIST)==0)
+     #if(length(RPKM_FILE_LIST)==0)
      {
        if(substr(toupper(Data_File_path),nchar(Data_File_path)-3,nchar(Data_File_path)) == ".RDA" | substr(toupper(Data_File_path),nchar(Data_File_path)-5,nchar(Data_File_path)) == ".RDATA")
        {
@@ -1464,7 +1628,7 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
        	DATA.RAW <- read.delim(Data_File_path,header=T,sep="\t")
        }#if(substr(toupper(Data_File_path),nchar(Data_File_path)-3,nchar(Data_File_path)) == ".txt" | substr(toupper(Data_File_path),nchar(Data_File_path)-5,nchar(Data_File_path)) == ".text")
 
-     }#if(!input$RPKM.Add_Data_Check | length(RPKM_FILE_LIST)==0)
+     }##if(length(RPKM_FILE_LIST)==0)
     
     
   	if(is.null(nrow(DATA.RAW)) | is.null(nrow(DATA.RAW)))
@@ -3093,7 +3257,6 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
      	print(length(RPKM_FILE_LIST))
     }
     #RPKM_TABLE_DATA_added       
-    #if(input$RPKM.Add_Data_Check & length(RPKM_FILE_LIST)>0)
     
     if(file.exists(Data_File_path) && !dir.exists(Data_File_path)) 
  	{
@@ -3184,7 +3347,7 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
   updateSelectizeInput(session, inputId = "Query_GSEA_Test",label = "Select Query",choices = c(), selected = NULL)
 
   
-  output$MDSPlot <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
+  output$MDSPlot <- renderPlotly(plot_ly())
   output$ComparePlot1 <- renderPlotly(plot_ly())
   output$ComparePlot2 <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
   output$ComparePlot3 <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
@@ -3260,7 +3423,6 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      inp_source <- input$Reads.Select_input
      
      
-     
      if(input$Reads.Select_input=="dbase" ){file.datapath <<- Reads.data.file.name}
      if(input$Reads.Select_input=="upload"){
        inFile <- input$file1
@@ -3270,12 +3432,27 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      File.Check = c()
      if(file.exists(file.datapath) & !dir.exists(file.datapath)) {File.Check = readLines(file.datapath)}
 
-     
-     if(length(File.Check)==0)
+
+     if(length(File.Check) < 2)
      {
        enable("Reads.Load_Data")
+       shinyalert(title = "File format Error", text="Check file format\n\nPlease use a TAB-delimited file with the below format:\n\n Genes  Sample1  Sample2\nGene1 reads_1 reads_2\nGene2 reads_1 reads_2", type = "error")
        return(NULL)
      }
+          
+
+     
+     File.Check_columns = sapply(File.Check,function(X) length(strsplit(X,split = "\t")[[1]]))
+
+	 if(!all(File.Check_columns == File.Check_columns[1] & File.Check_columns[1] >= 2))
+	 {
+	   enable("Reads.Load_Data")
+	   shinyalert(title = "File format Error", text="Check file format\n\nPlease use a TAB-delimited file with the below format:\n\n Genes  Sample1  Sample2\nGene1 reads_1 reads_2\nGene2 reads_1 reads_2", type = "error")
+       return(NULL)
+	 }
+    
+
+     
      #######################################################
      	
 
@@ -3292,24 +3469,20 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
    
      filename = file.datapath
      
+
+  
+      allData = read.delim(filename);
+    
      
      
-     
-     if(input$Reads.Add_Data_Check & length(READS_FILE_LIST)>0)
-     {
-     	allData = READ_TABLE_DATA_added
-     }
-     
-     if(!input$Reads.Add_Data_Check | length(READS_FILE_LIST)==0)
-     {
-       allData = read.delim(filename);
-     } 
-     
+     if(input$Reads.Select_input=="upload") allData = allData[,c(colnames(allData)[1],input$Reads.Library_select)]
 
      #######################
 ################################
 	New.Data.Table = allData
 	GENE.ID.List = sapply(New.Data.Table[,2],function(X) if(substr(X,1,3)=="ENS"){return(unlist(strsplit(as.character(X),split="\\."))[1])}else{return(as.character(X))})
+ 		
+
  		
 	 		ID.INX = which.max(apply(GENE_ID_Match, MARGIN=2, function(X) length(which(X %in% GENE.ID.List))))
  			ID.INX.max = max(apply(GENE_ID_Match, MARGIN=2, function(X) length(which(X %in% GENE.ID.List))))
@@ -3336,8 +3509,7 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
  			
  			}#if(length(ID.INX.max)<2) 
  		
- 								
- 								
+ 													
  								
  			New.Data.Table = New.Data.Table[match(GENE_ID_Match[,ID.INX], GENE.ID.List),]
  			New.Data.Table[,2] =GENE_ID_Match[,1]
@@ -3348,7 +3520,6 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
 		
 ################
 #######
-
 
      NORM.COUNTS = F
      if(colnames(allData)[3] != "len")
@@ -3361,16 +3532,18 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      	allData = data.frame(symbol = allData[,1], gene_ID = allData[,1],len = Gene_Lengths.ordered, allData[,2:ncol(allData)])
      }
      
+
      
-     
-     allData = allData[order(allData$len,decreasing=TRUE),] #order by decreasing length
+     #allData = allData[order(allData$len,decreasing=TRUE),] #order by decreasing length
      
      allData = allData[!duplicated(allData$symbol),] #remove redundant rows
      
      allData = allData[order(allData$symbol),] #order by gene symbol
      
      rownames(allData) = allData$symbol #name rows by gene symbol
-     rownames(allData) = allData$symbol
+     #rownames(allData) = allData$symbol
+ 
+
  
 #######################################################
 #######################################################
@@ -3380,6 +3553,7 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      #######################################################
      
      REPLICATES=F
+     
      
      #################################################################################################################
      
@@ -3429,12 +3603,12 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      	pengRPKMTable <- data.frame(allData[rownames(logCPM), c(1,2)], pengRPKM) #make data frame with gene name/symbol and rpkm
 	}#if(input$Reads.Raw_Norm == "Raw")
      	
+     	
      if(input$Reads.Raw_Norm == "Normalized")	
      {
      	pengRPKM <- Norm_Counts_data*1e3/allData[rownames(Norm_Counts_data),3] #counts per million divided by gene length
      	pengRPKMTable <- data.frame(allData[rownames(Norm_Counts_data), c(1,2)], pengRPKM) #make data frame with gene name/symbol and rpkm
      }
-     
      
 
 #######################################################
@@ -3455,7 +3629,6 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      }
      dataDispersion <- readData$common.dispersion^2
      
-     
       
 #######################################################
 #######################################################
@@ -3466,32 +3639,37 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      
      if(length(readData[1,])>=3)
      {
-	d = dist(t(allData[, c(4:length(colnames(allData)))]))
-        fit <- isoMDS(d, k=2)
+     	
+     		allData.subset = allData[apply(allData[,4:ncol(allData)], MARGIN=1, function(X) any(X!=0)),]
+     		
+            allData.tSNE = Rtsne(X= t((allData.subset[,4:ncol(allData.subset)])),dim=2,perplexity=1, max_iter= 1000)$Y
+			allData.tSNE = data.frame(allData.tSNE)
+			rownames(allData.tSNE) = colnames(allData.subset[,4:ncol(allData.subset)])
+            colnames(allData.tSNE) = c("X","Y")
 
-        MDS_Data = data.frame(X = fit$points[,1], Y = fit$points[,2],Samples = experimentGroup)
-
-        MDS_Distance.Reads.plot = ggplot(data=MDS_Data,aes(x=X, y=Y)) +
-          geom_text(label=MDS_Data$Samples)+
-          theme_bw() +
-          ggtitle("Nonmetric Multidimensional Scaling Plot")
-
-        Report.List.Reads <<- c(Report.List.Reads,list(MDS_Distance.Reads.plot))
-
-        MDS_Distance.plot.points = ggplot(data=MDS_Data,aes(x=X, y=Y, col = Samples)) +
-          geom_point()+
-          theme_bw()+
-          ggtitle("Nonmetric MDS")
-
-        Report.List.Reads <<- c(Report.List.Reads,list(MDS_Distance.plot.points))
-
-     	output$MDSPlot <- renderPlot({
+			
+			print(dim(allData.tSNE))
+			print(allData.tSNE[1:4,])
+			
+			plotlyMargins <- list(
+          		l = 50,
+          		r = 50,
+          		b = 100,
+          		t = 100,
+          		pad = 4
+        		)
+        
+            
+     		output$MDSPlot <- renderPlotly({
        		##pdf(paste(Directory,"summary.Total.MDSplot.",filename,".pdf",sep=""),height=8,width=8)
-       		P6 = plotMDS.DGEList(readData, main = "Multidimensional Scaling Plot", labels = experimentGroup, top = 200)
-       		##dev.off()
-       		P6
+       			            plot_ly(x=allData.tSNE$X, y= allData.tSNE$Y,text=rownames(allData.tSNE)) %>%
+            layout(title = "t-SNE Plot",autosize = F, width = 600, height = 600, margin = plotlyMargins)
+              
+
        	 })
-     }
+       
+   
+     }#if(length(readData[1,])>=3)
 #######################################################
 #######################################################
      progress$inc(6/nstep, detail = paste("Progress: ",65,"%",sep=""))
@@ -3499,7 +3677,6 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
      #######################################################  
      #######################################################      
      #################################################################################################################
-
 
 
 
@@ -3520,6 +3697,7 @@ Gene.Table.Data = paste(paste(colnames(pengRPKMTable),collapse="\t"),Gene.Table.
      updateTextAreaInput(session,inputId="Gene_Table", label = paste("Gene Table"), value = gsub("\t",",",Gene.Table.Data))	
      updateTextAreaInput(session,inputId="FPKM_Table", label = paste("Reads Table"), value = Gene.Table.Data)
      updateSelectizeInput(session, inputId="Comparison", label = "Select Library", choices = experimentGroup, selected = c(experimentGroup[1:min(2,length(experimentGroup))]))
+     shinyjs::show(id = "Comparison_Box_wrapper")
      
      #ALL_Genes_List =  rownames(pengRPKMTable)
      #ALL_conditions = c("ALL",colnames(readData))      
@@ -3704,6 +3882,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
  
   #Report.List.Reads <<- list()  
   
+  
      isolate({
         
        
@@ -3726,6 +3905,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
        
        #if(input$FPKM_Table)
        
+
       
        if(length(input$Comparison)>1){
          
@@ -3742,6 +3922,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 		 xLabel <- "logCPM"       
          yLabel <- paste("log2(",Sample2," Expression / ",Sample1," Expression)",sep="")
       
+
       
            MIN.dim = min(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
            MAX.dim = max(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
@@ -3774,13 +3955,14 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
              
            })#output$ComparePlot1 <- renderPlot({
          
+
+         
        if(input$Reads.EdgeR_DEseq == "EdgeR")
        { 
            
          #readData = read.table(text=gsub("(?<=[a-z])\\s+", "\n", input$FPKM_Table, perl=TRUE),header=T,sep=",")
          
          #pengRPKMTable = read.table(text=gsub("(?<=[a-z])\\s+", "\n", input$Gene_Table, perl=TRUE), header=T,sep=",")
-         
          experimentGroup = colnames(readData)
          rownames(readData) = make.unique(as.character(pengRPKMTable[,2]))
          rownames(pengRPKMTable) = make.unique(as.character(pengRPKMTable[,2]))
@@ -3789,17 +3971,22 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
          dataDispersion <- readData$common.dispersion^2
          
          
-         #readData=readData[,2:ncol(readData)]
-         #rownames(pengRPKMTable) = pengRPKMTable[1,]
-         
-         #pengRPKMTable = pengRPKMTable[2:nrow(pengRPKMTable),]
-         #readData = readData[2:nrow(readData),]
-         #Naive.WT.Media vs mem.WT.media.aCD3
          experimentPair <- c(Sample1,Sample2) #choose a pair of experiments to compare
+         
+         
+         an.error.occured <- FALSE
+		 tryCatch( {  comparison <- exactTest(readData, pair = experimentPair) }
+		 , error = function(e) {an.error.occured <<- TRUE})
+
+		 if(an.error.occured)
+		 {
+			shinyalert(title = "Error comparing these samples", text="EdgeR Error:\n\nbinomTest: y1 and y2 must be non-negative\n\nTry DESeq", type = "warning")
+     		return(NULL)
+		 }
+
          
          comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
          
-         print(comparison[1:9,])
          
          comparisonTable <- comparison$table #rename the variable within comparison so RStudio won't complain all the time
          
@@ -3861,13 +4048,29 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 		#rownames(counts) <-  counts[,1]
 		#counts$gene_name <-  NULL
 		
+		print("check22")
 		
          Sample1 = input$Comparison[1]
          Sample2 = input$Comparison[2]
          
          experimentPair <- c(Sample1,Sample2) #choose a pair of experiments to compare
 
+		print("check23")
+
+
+         an.error.occured <- FALSE
+		 tryCatch( {  comparison <- exactTest(readData, pair = experimentPair) }
+		 , error = function(e) {an.error.occured <<- TRUE})
+
+		 if(an.error.occured)
+		 {
+			shinyalert(title = "Error comparing these samples", text="Error:\n\nbinomTest: y1 and y2 must be non-negative", type = "warning")
+     		return(NULL)
+		 }#if(an.error.occured)
+
          comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
+         
+
          comparisonTable <- comparison$table #rename the variable within comparison so RStudio won't complain all the time               
          mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", p-value <",as.numeric(as.matrix(input$FDR_PvalThreshold)) ,")") #set up a title for graphs        
          numGenes <- sum(abs(decideTestsDGE(comparison,adjust.method = input$Pval_Correction, p.value = input$FDR_PvalThreshold))) # number of genes with significant differential expression
@@ -3876,15 +4079,18 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
         coldata_test = data.frame(Treatment = rep(c(Sample1, Sample2),each=2),Samples = rep(c(Sample1, Sample2),each=2))
 		rownames(coldata_test) = make.unique(rep(c(Sample1, Sample2),each=2))
 
+
 		counts_Compare = counts[,which(colnames(counts) %in% c(Sample1, Sample2))]
 		print(counts_Compare[1:3,1:2])
 		counts_Compare = counts_Compare[,c(1,1,2,2)]
 		counts_Compare[,c(2,4)] <- counts_Compare[,c(2,4)]+1
 	
+	
 		dds <- DESeqDataSetFromMatrix(countData = counts_Compare,
     		                          colData = coldata_test,
     		                          design = ~Treatment)
 		# pre-filtering Step: remove rows with 0 reads
+
 		
 		dds <- dds[ rowSums(counts(dds)) > 0, ]
 
@@ -3895,14 +4101,13 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 		res <- results(dds)
 		resOrdered <- res[order(res$padj),]
 
+		
 		DEG_Results = results(dds, name = resultsNames(dds)[2])
 
-		
-		
-		#print(cpm[1:10,])
 
 		evenExpression <- data.frame(logFC = DEG_Results$log2FoldChange, PValue = DEG_Results$pvalue, FDR = p.adjust(DEG_Results$padj,method = input$Pval_Correction))
         rownames(evenExpression) = rownames(DEG_Results)
+           
        
         numGenes <- sum(abs(decideTestsDGE(comparison,adjust.method = input$Pval_Correction, p.value = input$FDR_PvalThreshold))) # number of genes with significant differential expression
         
@@ -4351,7 +4556,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
          }#if (numGenes > 0)
          
          updateSelectizeInput(session, inputId="Comparison", label = "Select Library", choices = experimentGroup,selected = c(Sample1,Sample2))
-         
+         shinyjs::show(id = "Comparison_Box_wrapper")
          
       
          #################################################################################################################
@@ -4414,8 +4619,14 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
    #####################################    
    obs.Edgr.Compare.Groups.button <- observeEvent(input$Groups.CompareButton,ignoreInit = TRUE,{
      
-     Orig_pengRPKMTable <- pengRPKMTable
+     if(length(pengRPKMTable) <= 1)
+     {
+     	shinyalert(title = "Load counts/reads file", text="Load counts/reads data in the 'Load Count Data' tool, then create groups before using this tool.", type = "warning")
+     	return(NULL)
+     }
      
+     
+    Orig_pengRPKMTable <- pengRPKMTable
 #####################
      progress <- shiny::Progress$new()
      # Make sure it closes when we exit this reactive, even if there's an error
@@ -4461,6 +4672,20 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            isolate(Sample2 <- input$Groups.Treatment)
            
            
+           if(nchar(Sample1) == 0 | nchar(Sample2) == 0)
+           {
+           	  shinyalert(title = "Create Groups", text="Create at least 2 groups with the 'Create Groups' tool before using this tool.", type = "warning")
+           	  return(NULL)
+           }
+           
+           if(Sample1 == Sample2)
+           {
+           	  shinyalert(title = "Select Different Groups", text="Select two differrent groups to perform this analysis.", type = "warning")
+           	  return(NULL)
+           }
+           
+           
+           
            Group.Index = c()
            Group.Index[1] = which(Groups == Sample1)
            Group.Index[2] = which(Groups == Sample2)
@@ -4473,8 +4698,15 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            
            #Groups.readData.Medians[l,k] = median(as.numeric(as.matrix(readData[,match(unlist(strsplit(Group.Members[Group.Index[k]],split=";")),as.character(unlist(colnames(DATA.Values.5min))))])))
 
-           Groups.readData.ctrl = readData[,match(unlist(strsplit(Group.Members[Group.Index[1]],split=";")),as.character(unlist(colnames(readData))))]
-           Groups.readData.treat = readData[,match(unlist(strsplit(Group.Members[Group.Index[2]],split=";")),as.character(unlist(colnames(readData))))]
+			Group1_Members = unlist(strsplit(Group.Members[Group.Index[1]],split=";"))
+			Group2_Members = unlist(strsplit(Group.Members[Group.Index[2]],split=";"))
+			
+			if(length(Group1_Members) == 1){Group1_Members = c(Group1_Members,Group1_Members)}
+			if(length(Group2_Members) == 1){Group2_Members = c(Group2_Members,Group2_Members)}
+
+
+           Groups.readData.ctrl = readData[,match(Group1_Members,as.character(unlist(colnames(readData))))]
+           Groups.readData.treat = readData[,match(Group2_Members,as.character(unlist(colnames(readData))))]
            
            Groups.readData.ctrl.medians = apply(Groups.readData.ctrl,1, median, na.rm = TRUE)
            Groups.readData.treat.medians = apply(Groups.readData.treat,1, median, na.rm = TRUE)
@@ -4482,8 +4714,8 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            Groups.readData.med = cbind(Groups.readData.ctrl.medians,Groups.readData.treat.medians)
            colnames(Groups.readData.med) = as.character(c(Sample1,Sample2))
            
-           Groups.pengRPKMTable.ctrl = pengRPKMTable[,match(unlist(strsplit(Group.Members[Group.Index[1]],split=";")),as.character(unlist(colnames(pengRPKMTable))))]
-           Groups.pengRPKMTable.treat = pengRPKMTable[,match(unlist(strsplit(Group.Members[Group.Index[2]],split=";")),as.character(unlist(colnames(pengRPKMTable))))]
+           Groups.pengRPKMTable.ctrl = pengRPKMTable[,match(Group1_Members,as.character(unlist(colnames(pengRPKMTable))))]
+           Groups.pengRPKMTable.treat = pengRPKMTable[,match(Group2_Members,as.character(unlist(colnames(pengRPKMTable))))]
            
            Groups.pengRPKMTable.ctrl.medians = apply(Groups.pengRPKMTable.ctrl,1, median, na.rm = TRUE)
            Groups.pengRPKMTable.treat.medians = apply(Groups.pengRPKMTable.treat,1, median, na.rm = TRUE)
@@ -4997,6 +5229,13 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 #
   observeEvent(input$GO_Analysis,ignoreInit = TRUE,{  
     #updateSliderInput(session = session,inputId = "GO_Text_FC_limit",label = "Label absFC Threshold",min = 0,max = 0,value = 0)
+    
+    if(length("DATA.Values.5min") <= 1)
+	{	
+		shinyalert(title = "Data Error",text = "Please load data into the tool", type = "warning")
+		return(NULL)
+	}
+    
     
     progress <- shiny::Progress$new()
     # Make sure it closes when we exit this reactive, even if there's an error
@@ -6537,6 +6776,13 @@ print("new	")
     ######################################
     ######################################
    ######################
+   
+   	if(length("DATA.Values.5min") <= 1)
+	{	
+		shinyalert(title = "Data Error",text = "Please load data into the tool", type = "warning")
+		return(NULL)
+	}
+   
     progress <- shiny::Progress$new()
     # Make sure it closes when we exit this reactive, even if there's an error
     on.exit(progress$close())
@@ -6594,12 +6840,21 @@ print("new	")
       {
        Group.Member.index.1 = match(unlist(strsplit(Group.Members[Group.Index[1]],split=";")),as.character(unlist(colnames(DATA.Values.5min))))
        Group.Member.index.2 = match(unlist(strsplit(Group.Members[Group.Index[2]],split=";")),as.character(unlist(colnames(DATA.Values.5min))))
-      }
+      }#if(nchar(Group_Stat.Compare.1)>=1 & nchar(Group_Stat.Compare.2)>=1)
       if(nchar(Group_Stat.Compare.1)<1 & nchar(Group_Stat.Compare.2)<1)
       {
        Group.Member.index.1 = 1:ncol(DATA.Values.5min)
        Group.Member.index.2 = 1:ncol(DATA.Values.5min)
-      }
+      }#f(nchar(Group_Stat.Compare.1)<1 & nchar(Group_Stat.Compare.2)<1)
+      
+      if(length(Group.Member.index.1) <= 1 | length(Group.Member.index.2) <= 1)
+      {
+       shinyalert(title = "Small group size", text="If groups have less than two members, then all samples will be used in this analysis", type = "warning")
+
+       Group.Member.index.1 = 1:ncol(DATA.Values.5min)
+       Group.Member.index.2 = 1:ncol(DATA.Values.5min)
+      }#if(length(Group.Member.index.1) <= 1 | length(Group.Member.index.2) <= 1)
+
       
       
       Control.Treatment.data = DATA.Values.5min[,c(Group.Member.index.1,Group.Member.index.2)]
@@ -7142,8 +7397,7 @@ print("new	")
        }#if(GENERATE_LIST_Check)
         
       }#if(length(Control.Treatment.data.5.inx)>=2)
-    }#if(nchar(Group_Stat.Compare.1)>=1 & nchar(Group_Stat.Compare.2)>=1)
-
+    }##if(nrow(DATA.Values.5min)>10)
   ##########################################################
     progress$inc(0.999, detail = "Something Happened!")
     Sys.sleep(0.001)
@@ -7155,10 +7409,16 @@ print("new	")
   
   #####################################
   #####################################  
-  observeEvent(input$Group_Stat_analyis_button,ignoreInit = TRUE,{
+  observeEvent(input$Group_Stat_analysis_button,ignoreInit = TRUE,{
     #####################################
     #####################################  
     #####################
+    
+    if(length("DATA.Values.5min") <= 1)
+	{	
+		shinyalert(title = "Data Error",text = "Please load data into the tool and create groups", type = "warning")
+		return(NULL)
+	}
     
     ######################
     progress <- shiny::Progress$new()
@@ -7188,6 +7448,13 @@ print("new	")
       
       Group.Member.index.1 = match(unlist(strsplit(Group.Members[Group.Index[1]],split=";")),as.character(unlist(colnames(DATA.Values.5min))))
       Group.Member.index.2 = match(unlist(strsplit(Group.Members[Group.Index[2]],split=";")),as.character(unlist(colnames(DATA.Values.5min))))
+      
+      
+      if(length(Group.Member.index.1) <= 1 | length(Group.Member.index.2) <= 1 )
+      {
+        shinyalert(title = "Group Size Error", text="Select groups with at least 2 samples", type = "warning")
+      	return(NULL)
+      }#if(length(Group.Member.index.1) <= 1 | Group.Member.index.2 <=1 )
 
       Control.data = DATA.Values.5min[,Group.Member.index.1]
       Treatment.data = DATA.Values.5min[,Group.Member.index.2]
@@ -7243,6 +7510,7 @@ print("new	")
         }#for(j in 1:ncol(Control.data))
            
         plot.coords.norm = (plot.coords-min(plot.coords))/(max(plot.coords)-min(plot.coords))
+        
         
         NORM.score[g] = abs((mean(plot.coords.norm[,1]-plot.coords.norm[,2])+.1)/(sd(plot.coords.norm[,1]-plot.coords.norm[,2])+.1))
         Med.fc.score[g] = abs(log2((median(unlist(Treatment.data[g,]))+1)/(median(unlist(Control.data[g,]))+1)))
@@ -7462,7 +7730,7 @@ print("new	")
     progress$inc(0.99, detail = "Something Happened!")
     Sys.sleep(0.1)
     ######################
-  })#observeEvent(input$Group_Stat_analyis_button,{
+  })#observeEvent(input$Group_Stat_analysis_button,{
   
   #####################################
   #####################################   
@@ -7478,7 +7746,7 @@ print("new	")
   observeEvent(input$DEO_GO_Group_v_Sample,ignoreInit = TRUE,{
     
     #"Groups","Sample"
-    if(input$DEO_GO_Group_v_Sample == "Samples" & nchar(Data_File_path)>1)
+    if(input$DEO_GO_Group_v_Sample == "Samples" & length(DATA.Values.5min)>1)
     {
       updateSelectizeInput(session, inputId = "DEO_Control_GO_Test",label = "Select Control",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
       updateSelectizeInput(session, inputId = "DEO_Subjects_GO_Test",label = "Select Subjects",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
@@ -7524,6 +7792,14 @@ print("new	")
     ########
 
 Fpkm.table.New.txt = c()
+
+	if(length("DATA.Values.5min") <= 1)
+	{
+		shinyalert(title = "Data Error",text = "Please load data into the tool", type = "warning")
+
+		return(NULL)
+	}
+
 
     if(exists("DATA.Values.5min"))
     { 
@@ -7575,6 +7851,12 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
     Sys.sleep(0.001)
 
   
+  	if(length(Test.fpkm)==0 | length(Control.fpkm)==0 | length(GO_Shortlist)==0)
+  	{
+  		shinyalert(title = "No Hits",text = "Please Try different groups or a broader range/class of Gene Ontologies", type = "warning")
+		return(NULL)
+  		
+  	}
   
   	if(length(Test.fpkm)>0 & length(Control.fpkm)>0 & length(GO_Shortlist)>0)
     {
@@ -7627,6 +7909,13 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
     
     	print(HITS)
+    
+      	if(length(HITS) == 0)
+  		{
+  			shinyalert(title = "No Hits within threshold criteria",text = "Please Try a lower 'Min log2 Fold Change' and a higher 'Max p-value'", type = "warning")
+			return(NULL)		
+  		}
+    
     
     	GO.Pval.analysis.Pathway.Hits.GTable = c()
 		if(length(HITS) > 0)
@@ -7730,6 +8019,9 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
     }#if(length(GO.exmp)>0 & length(Test.fpkm)>0 & length(Control.fpkm)>0 & nchar(RPKM.threshold)>0))
       
+      
+      
+      
     progress$inc(1, detail = paste("Progress: ",99,"%",sep=""))
     Sys.sleep(0.001)
     ###############################################  
@@ -7745,7 +8037,7 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
   observeEvent(input$GSEA_Group_v_Sample,ignoreInit = TRUE,{
     
     #"Groups","Sample"
-    if(input$GSEA_Group_v_Sample == "Sample" & nchar(Data_File_path)>1)
+    if(input$GSEA_Group_v_Sample == "Sample" & length(DATA.Values.5min)>1)
     {
       updateSelectizeInput(session, inputId = "Control_GSEA_Test",label = "Select Control",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = colnames(DATA.Values)[1:ncol(DATA.Values)][1])
       updateSelectizeInput(session, inputId = "Query_GSEA_Test",label = "Select Query",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = colnames(DATA.Values)[1:ncol(DATA.Values)][ncol(DATA.Values)])
@@ -7776,6 +8068,14 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 ################################################
 
 	observeEvent(input$Run_Enriched_Signatures,ignoreInit = TRUE,{
+
+	if(length("DATA.Values.5min") <= 1)
+	{
+		shinyalert(title = "Data Error",text = "Please load data into the tool", type = "warning")
+
+		return(NULL)
+	}
+
 
     	if(exists("DATA.Values.5min"))
     	{ 
@@ -7984,6 +8284,13 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
 #observeEvent(input$Run_GSEA,{
 	observeEvent(input$GSEA_GeneSet,ignoreInit = TRUE,{
+		
+		if(length("DATA.Values.5min") <= 1)
+		{	
+			shinyalert(title = "Data Error",text = "Please load data into the tool", type = "warning")
+			return(NULL)
+		}
+
 
 	 if(length(input$GSEA_GeneSet)>0 & input$GSEA_GeneSet != "" & !is.na(input$GSEA_GeneSet) & !is.null(input$GSEA_GeneSet))
 	 {
