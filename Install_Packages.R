@@ -20,6 +20,7 @@ install.packages("cowplot")
 install.packages("reshape2")
 install.packages("rintrojs")
 install.packages("uwot")
+install.packages("shinyalert")
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
