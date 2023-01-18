@@ -8,34 +8,36 @@
 #    http://shiny.rstudio.com/
 #
 
-library(shiny)
-library(shinydashboard)
-library(shinyWidgets)
-library(shinyjs)
-library(markdown)
-library(MASS)
-library(pheatmap)
-library(plotly)
-library(edgeR)
-library(RColorBrewer)
-library(ggplot2)
-library(dplyr)
-library(heatmaply)
-library(gridExtra)
-require(gtools)
-library(colourpicker)
-library(Rtsne)
-library(scatterplot3d)
-library(grid)
-library(cowplot)
-library(fgsea)
-library(reshape2)
-library(rintrojs)
-library(DESeq2)
-library(uwot)
-library(shinyalert)
+suppressPackageStartupMessages(library(shiny))
+suppressPackageStartupMessages(library(shinydashboard))
+suppressPackageStartupMessages(library(shinyWidgets))
+suppressPackageStartupMessages(library(shinyjs))
+suppressPackageStartupMessages(library(shinycssloaders))
+suppressPackageStartupMessages(library(markdown))
+suppressPackageStartupMessages(library(MASS))
+suppressPackageStartupMessages(library(pheatmap))
+#suppressPackageStartupMessages(library(plotly))
+suppressPackageStartupMessages(library(edgeR))
+suppressPackageStartupMessages(library(RColorBrewer))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(heatmaply))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(require(gtools))
+suppressPackageStartupMessages(library(colourpicker))
+suppressPackageStartupMessages(library(Rtsne))
+suppressPackageStartupMessages(library(scatterplot3d))
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(cowplot))
+#suppressPackageStartupMessages(library(fgsea))
+suppressPackageStartupMessages(library(reshape2))
+suppressPackageStartupMessages(library(rintrojs))
+#suppressWarnings(suppressPackageStartupMessages(library(DESeq2)))
+suppressPackageStartupMessages(library(uwot))
+suppressPackageStartupMessages(library(shinyalert))
 
-options(shiny.maxRequestSize=50*1024^2)  # Limits file upload size to 50 MB
+
+options(shiny.maxRequestSize=500*1024^2)  # Limits file upload size to 500 MB
 
 READS_FILE_LIST = c()
 READ_TABLE_DATA_added = c()
@@ -47,8 +49,12 @@ Data.folder = "Data/FPKM/"
 Reads.Data.folder = "Data/READS/"
 Ontology.folder = "Data/Homo_Sapien/"
 
-GENE_ID_Match = read.delim("Data/Gene_ID_Matches.txt")
-GENE_LENGTHS = read.delim("Data/GENE_Lengths.txt")
+Backup.folder = "Backup/"
+
+load("Data/ROGUE_Base_Workspace.RData")
+
+#GENE_ID_Match = read.delim("Data/Gene_ID_Matches.txt")
+#GENE_LENGTHS = read.delim("Data/GENE_Lengths.txt")
 
 
 
@@ -66,67 +72,21 @@ Report.List.Reads = list()
 ### GENE Ontology Data ###
 ##########################
 
-Human_GO = readLines(paste(Ontology.folder,"goa_humanT.gaf",sep=""))
-Mouse_GO = readLines(paste(Ontology.folder,"gene_associationT.mgi",sep=""))
-Human_GO = c(Human_GO,Mouse_GO)
-GO_defs  = readLines(paste(Ontology.folder,"go.obo",sep=""))
-GO.hierarchy = readLines(paste(Ontology.folder,"go.hierarchy2.txt",sep=""))
-GO.EXT.hierarchy = readLines(paste(Ontology.folder,"go.Ext.hierarchy3.txt",sep=""))
-
-
-
-GO_Gene_Table = read.csv(paste(Ontology.folder,"goa_humanT_sel2.csv",sep=""),header = F)
-GO_Gene_Table_mouse = read.csv(paste(Ontology.folder,"gene_associationT_sel2.csv",sep=""),header = F)
-GO_Gene_Table = rbind(GO_Gene_Table,GO_Gene_Table_mouse)
 
 ##########
 ##########STEP
 ##########
 
-GO.IDs = substr(GO_defs[which(substr(GO_defs,1,3)=="id:")],5,14)
-GO.Names = substr(GO_defs[which(substr(GO_defs,1,3)=="id:")+1],7,nchar(GO_defs[which(substr(GO_defs,1,3)=="id:")+1]))
-#GO.info = data.frame(GO.IDs,GO.Names)
-
-GO.IDs = GO.IDs[-grep("obsolete",GO.Names)]
-GO.Names = GO.Names[-grep("obsolete",GO.Names)]
-
-GO.info = data.frame(GO.IDs,GO.Names)
-GO.info.count = GO.info
-
-DEO_Keywords = unique(gsub("1|2|3|4|5|6|7|8|9|0","",
-	sort(unique(unlist(sapply(GO.info$GO.Names,function(X) strsplit(as.character(X),split=" |-|\\(|\\)|\\[|\\]|,|'|:|\\+|\\/|>|<")))))[
-	which(nchar(gsub("1|2|3|4|5|6|7|8|9|0","",sort(unique(unlist(sapply(GO.info$GO.Names,function(X) strsplit(as.character(X),split=" |-|\\(|\\)|\\[|\\]|,|'|:|\\+|\\/|>|<"))))))) >= 3)
-])) #DEO_Keywords = unique(gsub("1|2|3|4|5|6|7|8|9|0","",
-
-
-BP_Switch = FALSE
-MF_Switch = FALSE
-CC_Switch = FALSE
-
-BP_Switch_Combine = FALSE
-MF_Switch_Combine = FALSE
-CC_Switch_Combine = FALSE
-
-
-rm(GO.IDs)
-rm(GO.Names)
-rm(GO_defs)
 
 ##########
 ##########STEP
 ##########
 
-GO.Hierarchy.Heads = c()
-
-GO.Hierarchy.Heads = sapply(GO.hierarchy, FUN=function(x) strsplit(x,split=" ")[[1]])
-GO.hierarchy.List = lapply(GO.hierarchy, FUN=function(x) unlist(strsplit(x,split=" ")))
 
 ##########
 ##########STEP
 ##########
 
-GO_Top_Level = c("molecular_function","biological_process","cellular_component")
-GO_Prev_Step = c()
 
 ##############################
 ### End GENE Ontology Data ###
@@ -136,20 +96,6 @@ GO_Prev_Step = c()
 ### Gene Einrichment Data GSEA ####
 ##################################
 
-GSET_HallMark = load("Data/GSEA/human_H_v5p2.rdata") # hallmark gene sets 
-GSET_C1 = load("Data/GSEA/human_c1_v5p2.rdata") # positional gene sets 
-GSET_C2 = load("Data/GSEA/human_c2_v5p2.rdata") # curated gene sets 
-GSET_C3 = load("Data/GSEA/human_c3_v5p2.rdata") # motif gene sets 
-GSET_C4 = load("Data/GSEA/human_c4_v5p2.rdata") # computational gene sets 
-GSET_C5 = load("Data/GSEA/human_c5_v5p2.rdata") # GO gene sets 
-GSET_C6 = load("Data/GSEA/human_c6_v5p2.rdata") # oncogenic signatures
-GSET_C7 = load("Data/GSEA/human_c7_v5p2.rdata") # immunologic signatures
-
-GSEA_LIST = c("All","hallmark gene sets","positional gene sets","curated gene sets","motif gene sets","computational gene sets","GO gene sets","oncogenic signatures","immunologic signatures")
-ALL_Lists = c(Hs.H,Hs.c1,Hs.c2,Hs.c3,Hs.c4,Hs.c5,Hs.c6,Hs.c7)
-
-GENE_Symbol_Ensembl = read.delim("Data/GSEA/bioDBnet_db2db.txt")
-
 
 
 #########################################
@@ -157,7 +103,7 @@ GENE_Symbol_Ensembl = read.delim("Data/GSEA/bioDBnet_db2db.txt")
 #########################################
 
   load_data <- function() {
-    Sys.sleep(2)
+    Sys.sleep(0.2)
     hide("loading_page")
     show("main_content")
   }
@@ -185,7 +131,7 @@ fluidRow(column(width=8,shiny::actionButton(inputId='ab1', label="View ROGUE Man
 						menuSubItem("Differentially Expressed Ontologies",tabName="Diff_Expressed_Ontologies", icon=icon("line-chart"))
 					),#menuItem("Advanced Analysis",   icon=icon("line-chart"),
 				   hr(),	
-
+					menuItem("Session Info", tabName="Session_Info", icon=icon("refresh")),
 				   downloadButton(outputId = "Download_Summary_Plots",label = "Download Report",class = "Download_Report"),
 				  tags$head(tags$style(".Download_Report{background-color:#1A3333;} .Download_Report{color: #1A3333;} .Download_Report{border-color: #1A3333;} .Download_Report{float: center;} "))
 				  
@@ -317,13 +263,13 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                    mainPanel(
                      tabsetPanel(
                        tabPanel("Summary_plots", 
-                                plotlyOutput("MDSPlot",height = "600px",width = "600px"),
-                                plotlyOutput("ComparePlot1",height = "500px",width = "500px"),
-                                plotOutput("ComparePlot2"),
-                                plotOutput("ComparePlot3"),
-                                plotOutput("ComparePlot4"),
-                                plotOutput("ComparePlot5"),
-                                plotOutput("ComparePlot6"),
+                                hidden(div(id="MDSPlot_div",shinycssloaders::withSpinner(plotlyOutput("MDSPlot",height = "600px",width = "600px")))),
+                                hidden(div(id="ComparePlot1_div",shinycssloaders::withSpinner(plotlyOutput("ComparePlot1",height = "500px",width = "500px")))),
+                                hidden(div(id="ComparePlot2_div",shinycssloaders::withSpinner(plotOutput("ComparePlot2")))),
+                                hidden(div(id="ComparePlot3_div",shinycssloaders::withSpinner(plotOutput("ComparePlot3")))),
+                                hidden(div(id="ComparePlot4_div",shinycssloaders::withSpinner(plotOutput("ComparePlot4")))),
+                                hidden(div(id="ComparePlot5_div",shinycssloaders::withSpinner(plotOutput("ComparePlot5")))),
+                                hidden(div(id="ComparePlot6_div",shinycssloaders::withSpinner(plotOutput("ComparePlot6")))),
                                 plotOutput("ComparePlot7"),
                                 plotOutput("ComparePlot8")),
                        tabPanel("GeneLists",
@@ -401,7 +347,7 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
   	                      
   	              hidden(
                    div(id = "FPKM_Database_Box_wrapper",
-                     box(id = "FPKM_Database_Box", title = "Select a counts/reads file", width = '200px',    
+                     box(id = "FPKM_Database_Box", title = "Select a FPKM/TPM file", width = '200px',    
   	                       	                      
                     		h5(id="h4DataUser",selectInput(inputId="Data_User", label="Select Data Library", c(Data.folder.files), selected = NULL, multiple = F)),
                     		h5(id="h4DataSet",selectInput(inputId="Data_set", label="Select Dataset", c(""), selected = NULL, multiple = F))
@@ -420,8 +366,8 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                  
                    # Show a plot of the generated distribution
                     mainPanel(
-                     plotOutput("distPlot"),
-                     tableOutput("User_Data_File")
+                      hidden(div(id="distPlot_div",shinycssloaders::withSpinner(plotOutput("distPlot")))),
+                      tableOutput("User_Data_File")
                    )#mainPanel
                   )#sidebarLayout
                  
@@ -442,7 +388,7 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
     			  box(
      	 		title = p(actionButton("Create_Groups_load_help", "", icon = icon("question"),
                   	class = "btn-xs", title = "Help"),"Create Groups"                
-     	 		),#title = p( 
+     	 		),#title = p 
      	 			width = 10, solidHeader = TRUE, 
       				uiOutput("boxContent_Create_Groups"),
 
@@ -451,7 +397,7 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                  		h5(id = "h4GroupName",textInput(inputId="Group_Name",label="Group Name",placeholder="Enter Group Name"))),
                  		column(width=3,
                  		h5(id = "h4SelectGroupMembers",selectInput(inputId="All_Conditions", label="Select Group Members", c(""), selected = NULL, multiple = T)))
-               		  ),#fluidRow(
+               		  ),#fluidRow
                		fluidRow(column(width=2,h5(id="h4CreateGroup",actionButton(inputId = "Create_Group",label = "Create Group")))),
                		fluidRow(column(width=2,h5(id="h4UploadGroupsFile",fileInput("Upload_Groups_File", "Choose 'Groups' File")))),
                		fluidRow(column(width=2,h5(id="h4UploadGroup",actionButton(inputId = "Upload_Group",label = "Upload Groups"))),
@@ -461,8 +407,8 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
 				
 				
 
-				    )#box(
-  		    	)#fluidRow(
+				    )#box
+  		    	)#fluidRow
 				),#tabItem(tabName = "Create_Groups",
 				#######################################
 				#######################################
@@ -499,12 +445,12 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
            			mainPanel(
              		 tabsetPanel(
                			tabPanel("Summary_plots", 
-                        	plotlyOutput("Groups.ComparePlot1",height = "500px",width = "500px"),
-                        	plotOutput("Groups.ComparePlot2"),
-                        	plotOutput("Groups.ComparePlot3"),
-                        	plotOutput("Groups.ComparePlot4"),
-                        	plotOutput("Groups.ComparePlot5"),
-                        	plotOutput("Groups.ComparePlot6"),
+               			         hidden(div(id="Groups.ComparePlot1_div",shinycssloaders::withSpinner(plotlyOutput("Groups.ComparePlot1",height = "500px",width = "500px")))),
+               			         hidden(div(id="Groups.ComparePlot2_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot2")))),
+               			         hidden(div(id="Groups.ComparePlot3_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot3")))),
+               			         hidden(div(id="Groups.ComparePlot4_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot4")))),
+               			         hidden(div(id="Groups.ComparePlot5_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot5")))),
+               			         hidden(div(id="Groups.ComparePlot6_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot6")))),
                         	plotOutput("Groups.ComparePlot7"),
                         	plotOutput("Groups.ComparePlot8")),
                			tabPanel("Groups.GeneLists",
@@ -562,14 +508,15 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
 					 h5(id = "h4SingleXaxisangle" ,sliderInput(inputId = "Single.Xaxis.angle",label = "X-axis Orientation",min = 0,max = 180,value = 45)))
  	       		   ),#fluidRow(
  
-               	   textOutput("Stacked_Plot.label"),
-                   plotOutput("Stacked_Plot"),
-                   textOutput("Single.Sample.barplot.label"),
-                   plotOutput("Single.Sample.barplot"),
-                   textOutput("Single.Sample.heatmap.label"),
-                   plotOutput("Single.Sample.heatmap"),
-                   textOutput("MDS_PLOT.Samples.label"),
-                   plotOutput("MDS_PLOT.Samples")
+             	   
+					 textOutput("Stacked_Plot.label"),
+					 hidden(div(id="Stacked_Plot_div",shinycssloaders::withSpinner(plotOutput("Stacked_Plot")))),
+					 textOutput("Single.Sample.barplot.label"),
+					 hidden(div(id="Single.Sample.barplot_div",shinycssloaders::withSpinner(plotOutput("Single.Sample.barplot")))),
+					 textOutput("Single.Sample.heatmap.label"),
+					 hidden(div(id="Single.Sample.heatmap_div",shinycssloaders::withSpinner(plotOutput("Single.Sample.heatmap")))),
+					 textOutput("MDS_PLOT.Samples.label"),
+					 hidden(div(id="MDS_PLOT.Samples_div",shinycssloaders::withSpinner(plotOutput("MDS_PLOT.Samples"))))
                   
                   )#box(
   		    	)#fluidRow(  
@@ -610,18 +557,18 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
 						h5(id="h4GroupXaxisangle", sliderInput(inputId = "Group.Xaxis.angle",label = "X-axis Orientation",min = 0,max = 180,value = 45)))
 	       		  	),#fluidRow(
                
-               		textOutput("Group.boxplot.label"),
-               		plotOutput("Group.boxplot",height = "800px"),
-               		textOutput("Group.barplot.label"),
-               		plotOutput("Group.barplot"),
-               		textOutput("Group.barplot.sem.label"),
-               		plotOutput("Group.barplot.sem"),
-               		textOutput("Group.heatmap.label"),
-               		plotOutput("Group.heatmap"),
-               		textOutput("Group.members.heatmap.label"),
-               		plotOutput("Group.members.heatmap"),
-               		textOutput("Group.MDS_PLOT.Samples.label"),
-               		plotOutput("Group.MDS_PLOT.Samples")
+						textOutput("Group.boxplot.label"),
+						hidden(div(id="Group.boxplot_div",shinycssloaders::withSpinner(plotOutput("Group.boxplot",height = "800px")))),
+						textOutput("Group.barplot.label"),
+						hidden(div(id="Group.barplot_div",shinycssloaders::withSpinner(plotOutput("Group.barplot")))),
+						textOutput("Group.barplot.sem.label"),
+						hidden(div(id="Group.barplot.sem_div",shinycssloaders::withSpinner(plotOutput("Group.barplot.sem")))),
+						textOutput("Group.heatmap.label"),
+						hidden(div(id="Group.heatmap_div",shinycssloaders::withSpinner(plotOutput("Group.heatmap")))),
+						textOutput("Group.members.heatmap.label"),
+						hidden(div(id="Group.members.heatmap_div",shinycssloaders::withSpinner(plotOutput("Group.members.heatmap")))),
+						textOutput("Group.MDS_PLOT.Samples.label"),
+						hidden(div(id="Group.MDS_PLOT.Samples_div",shinycssloaders::withSpinner(plotOutput("Group.MDS_PLOT.Samples"))))
 				  )#box(
   		    	)#fluidRow(
 				),#tabItem(tabName = "Group_Comparison",
@@ -664,16 +611,16 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
 
                       ),#sidebarPanel
                       mainPanel(
-                          plotOutput(outputId = "GSEA_PLOT_1"),
-                          plotOutput(outputId = "GSEA_PLOT_2"),
+                         hidden(div(id="GSEA_PLOT_1_div",shinycssloaders::withSpinner(plotOutput(outputId = "GSEA_PLOT_1")))),
+                         hidden(div(id="GSEA_PLOT_2_div",shinycssloaders::withSpinner(plotOutput(outputId = "GSEA_PLOT_2")))),
                           fluidRow(
-                               column(width=5,plotlyOutput(outputId = "GSEA_Heatmap")),
-                               column(width=5,plotlyOutput(outputId = "GSEA_Heatmap2"))
+                               column(width=5,hidden(div(id="GSEA_Heatmap_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "GSEA_Heatmap"))))),
+                               column(width=5,hidden(div(id="GSEA_Heatmap2_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "GSEA_Heatmap2")))))
                            ),#fluidRow(
-                           plotlyOutput(outputId = "GSEA_Barplot")
+                        hidden(div(id="GSEA_Barplot_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "GSEA_Barplot"))))
                                      
-						  )#mainPanel
-                         )#sidebarLayout
+                        )#mainPanel
+						  )#sidebarLayout
 
 				  )#box(
   		      	)#fluidRow(				
@@ -722,8 +669,8 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                            mainPanel(fluidRow(
                                      
                                 column(width=8,
-                                    plotOutput(outputId = "Ontology_Barplot"),
-                                    plotlyOutput(outputId = "Ontology_Barplot_Pvalues")
+                                       hidden(div(id="Ontology_Barplot_div",shinycssloaders::withSpinner(plotOutput(outputId = "Ontology_Barplot")))),
+                                       hidden(div(id="Ontology_Barplot_Pvalues_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "Ontology_Barplot_Pvalues"))))
                                 ),#column(width=8,
                                 column(width=4,
                                           h5(id = "h4PreviousGOButton",actionLink(inputId = "Previous_GO_Button", label = "Go Back")),
@@ -776,13 +723,15 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
      	 											 width = 12, solidHeader = TRUE, 
       												uiOutput("boxContent_Group_Stats_Comparison"),
       												
-                                                plotlyOutput("Group_Stats_log2RPKM",height = "600px",width = "600px"),
-                                                plotOutput("Group_Stats_Scatter_Boxplot",height = "1000px"),
-                                                plotOutput("Group_Stat_Gene_FC"),
-                                                downloadButton(outputId = "Group_Stat_Download_Graphs", label = "Download All Data")
-                                        	 )#box(
-  		    							)#fluidRow(
-                                       ),#tabPanel("Summary_plots"
+      												hidden(div(id="Group_Stats_log2RPKM_div",shinycssloaders::withSpinner(plotlyOutput("Group_Stats_log2RPKM",height = "600px",width = "600px")))),
+      												hidden(div(id="Group_Stats_Scatter_Boxplot_div",shinycssloaders::withSpinner(plotOutput("Group_Stats_Scatter_Boxplot",height = "1000px")))),
+      												hidden(div(id="Group_Stat_Gene_FC_div",shinycssloaders::withSpinner(plotOutput("Group_Stat_Gene_FC")))),
+										
+      												downloadButton(outputId = "Group_Stat_Download_Graphs", label = "Download All Data")
+                           
+      												)#box
+    			 								 )#fluidRow
+    			 								 ),#tabPanel("Summary_plots"
 							##########################################
 							##########################################
                                        tabPanel("Group_Stats_GeneList",
@@ -807,16 +756,17 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                                                 column(width=2,h5(id = "h4GroupStatsTSNEPointSize", sliderInput(inputId = "Group_Stats_tSNE_pointSize",label="Choose point size", min = 1, max = 50, value = 3, step = 1))),
 												column(width=2,h5(id = "h4GroupStatsTSNESeed", textInput(inputId = "Group_Stats_tSNE_Seed",label = "Set Seed", value = 4000,width = '60px')))),
 												h5(id = "h4GenerateTSNEList", checkboxInput(inputId = "Generate_tSNE_List",label = "Generate distance p-value lists? (May take some time)",value = FALSE)),
-                                                h5(id = "h4GroupStatsTSNEGeneList", textAreaInput(inputId = "Group_Stats_tSNE_Gene_List",label = "(Optional) Enter Gene List",value="",width = '300px', height='200px')),
-                                                fluidRow(column(width=4,h5(id = "h4GroupStatsTSNEGene", selectizeInput(inputId = "Group_Stats_tSNE_Gene",label = "Highlight Gene (Optional)",choices = c(""), selected = NULL, multiple = T)))),
-                                                fluidRow(column(width=4,h5(id = "h4GroupStatsTSNEGroup", selectizeInput(inputId = "Group_Stats_tSNE_Group",label = "Highlight Group (Optional)",choices = c(""), selected = NULL, multiple = T)))),
-                                                plotOutput(outputId = "Group_Stats_t_SNE_3Dplot"),
-                                                plotlyOutput(outputId = "Group_Stats_t_SNE_3Dplotly",height = "600px",width = "600px"),
-                                                plotlyOutput(outputId = "Group_Stats_t_SNE_plotly",height = "600px",width = "600px"),
-                                                fluidRow(
-                                                  column(width=6,textAreaInput(inputId = "Group_Stats_t_SNE_3DGeneList",label = "Similarly Expressed Genes (3D t-SNE)",value="",width = '300px', height='300px')),
-                                                  column(width=6,textAreaInput(inputId = "Group_Stats_t_SNE_2DGeneList",label = "Similarly Expressed Genes (2D t-SNE)",value="",width = '300px', height='300px'))
-                                                )#fluidRow(
+												h5(id = "h4GroupStatsTSNEGeneList", textAreaInput(inputId = "Group_Stats_tSNE_Gene_List",label = "(Optional) Enter Gene List",value="",width = '300px', height='200px')),
+												fluidRow(column(width=4,h5(id = "h4GroupStatsTSNEGene", selectizeInput(inputId = "Group_Stats_tSNE_Gene",label = "Highlight Gene (Optional)",choices = c(""), selected = NULL, multiple = T)))),
+												fluidRow(column(width=4,h5(id = "h4GroupStatsTSNEGroup", selectizeInput(inputId = "Group_Stats_tSNE_Group",label = "Highlight Group (Optional)",choices = c(""), selected = NULL, multiple = T)))),
+												hidden(div(id="Group_Stats_t_SNE_3Dplot_div",shinycssloaders::withSpinner(plotOutput(outputId = "Group_Stats_t_SNE_3Dplot")))),
+												hidden(div(id="Group_Stats_t_SNE_3Dplotly_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "Group_Stats_t_SNE_3Dplotly",height = "600px",width = "600px")))),
+												hidden(div(id="Group_Stats_t_SNE_plotly_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "Group_Stats_t_SNE_plotly",height = "600px",width = "600px")))),
+                                                
+												fluidRow(
+												  column(width=6,textAreaInput(inputId = "Group_Stats_t_SNE_3DGeneList",label = "Similarly Expressed Genes (3D t-SNE)",value="",width = '300px', height='300px')),
+												  column(width=6,textAreaInput(inputId = "Group_Stats_t_SNE_2DGeneList",label = "Similarly Expressed Genes (2D t-SNE)",value="",width = '300px', height='300px'))
+												  )#fluidRow(
                                                 
                                                 
                                        )#tabPanel("t-SNE"
@@ -853,14 +803,14 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                         #column(width=4,h5(id = "h4SelectBPs",actionButton(inputId = "Select_BPs",label = "Biological Process",style="color: #fff; background-color: #337ab7; border-color: #2e6da4; font-size:9px"))),
                         #column(width=4,h5(id = "h4SelectMFs", actionButton(inputId = "Select_MFs",label = "Molecular Function",style="color: #fff; background-color: #337ab7; border-color: #2e6da4; font-size:9px"))),
                         #column(width=4,h5(id = "h4GOGroupVSample", actionButton(inputId = "Select_CCs",label = "Cellular Components",style="color: #fff; background-color: #337ab7; border-color: #2e6da4; font-size:9px")))
-			selectInput(inputId = "Ontology_Select_Parent",label = "Select GO Class",choices = paste(c(rep("",2),rep("Biological Process - ",30)),GO.info[match(c("GO:0003674","GO:0005575","GO:0000003","GO:0001906","GO:0002376","GO:0006791","GO:0006794","GO:0007610","GO:0008152","GO:0008283","GO:0009758","GO:0009987","GO:0015976","GO:0019740","GO:0022414","GO:0022610","GO:0023052","GO:0032501","GO:0032502","GO:0040007","GO:0040011","GO:0043473","GO:0044848","GO:0048511","GO:0050896","GO:0051179","GO:0051704","GO:0065007","GO:0071840","GO:0098743","GO:0098754","GO:0099531"),GO.info[,1]),2][c(1,2,5,9,10,12,15,19,24,25,27,28,17,20,30,3,4,8,11,13,14,16,21,22,23,26,29,31,32,6,7)],sep=""), selected = NULL, multiple = F)
+			selectInput(inputId = "Ontology_Select_Parent",label = "Select GO Class",choices = Ontology_CLASS_SELECT, selected = NULL, multiple = F)
                        )),                                  
                        h5(id = "h4OntologyList", selectInput(inputId = "Ontology_List",label = "Select GO (Select GO Class Above)",choices = c(), selected = NULL, multiple = T)),
                        h5(id = "h4SelectOntologiesCombie",fluidRow(
                        	#column(width=4,h5(id = "h4SelectBPsCombine", actionButton(inputId = "Select_BPs_Combine",label = "Biological Process",style="color: #fff; background-color: #537ab7; border-color: #4e6da4; font-size:9px"))),
                         #column(width=4,h5(id = "h4SelectMFsCombine", actionButton(inputId = "Select_MFs_Combine",label = "Molecular Function",style="color: #fff; background-color: #537ab7; border-color: #4e6da4; font-size:9px"))),
                         #column(width=4,h5(id = "h4SelectCCsCombine", actionButton(inputId = "Select_CCs_Combine",label = "Cellular Components",style="color: #fff; background-color: #537ab7; border-color: #4e6da4; font-size:9px")))
-			selectInput(inputId = "Ontology_Select_Parent_Combine",label = "Select GO Class",choices = paste(c(rep("",2),rep("Biological Process - ",30)),GO.info[match(c("GO:0003674","GO:0005575","GO:0000003","GO:0001906","GO:0002376","GO:0006791","GO:0006794","GO:0007610","GO:0008152","GO:0008283","GO:0009758","GO:0009987","GO:0015976","GO:0019740","GO:0022414","GO:0022610","GO:0023052","GO:0032501","GO:0032502","GO:0040007","GO:0040011","GO:0043473","GO:0044848","GO:0048511","GO:0050896","GO:0051179","GO:0051704","GO:0065007","GO:0071840","GO:0098743","GO:0098754","GO:0099531"),GO.info[,1]),2][c(1,2,5,9,10,12,15,19,24,25,27,28,17,20,30,3,4,8,11,13,14,16,21,22,23,26,29,31,32,6,7)],sep=""), selected = NULL, multiple = F)
+			selectInput(inputId = "Ontology_Select_Parent_Combine",label = "Select GO Class",choices = Ontology_CLASS_SELECT, selected = NULL, multiple = F)
                        )),
                        h5(id = "h4OntologyCombine", selectInput(inputId = "Ontology_Combine",label = "Combine GOs with - Optional:(Select GO Class Above) ",choices = c(), selected = NULL, multiple = T)),
                        h5(id = "h4GOAnalysis", actionButton(inputId = "GO_Analysis",label = "Get GO Gene's Fold Change")),
@@ -884,12 +834,12 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                        h5(id = "h4GraphWidthFont",fluidRow(
                        	column(width=3,sliderInput(inputId = "GO.Graph_Width",label = "Graph Width",min = 1,max = 4,value = 4)),
                         column(width=3,sliderInput(inputId = "GO.Font_Size",label = "Font Size",min = 1,max = 4,value = 2)))),
-                        plotOutput("GO_FC_Expression"),
-                        plotOutput("GO_FC_Expression_Sep"),
-                        plotOutput("GO_Distribution"),
-                        plotlyOutput("GO_Heatmap_rowScale",height='600px',width = "1200px"),
-                        plotOutput("Space_hold",height='200px',width = "200px"),
-                        plotlyOutput("GO_Heatmap",height='600px',width = "1200px"),                                                              
+                       hidden(div(id="GO_FC_Expression_div",shinycssloaders::withSpinner(plotOutput("GO_FC_Expression")))),
+                       hidden(div(id="GO_FC_Expression_Sep_div",shinycssloaders::withSpinner(plotOutput("GO_FC_Expression_Sep")))),
+                       hidden(div(id="GO_Distribution_div",shinycssloaders::withSpinner(plotOutput("GO_Distribution")))),
+                       hidden(div(id="GO_Heatmap_rowScale_div",shinycssloaders::withSpinner(plotlyOutput("GO_Heatmap_rowScale",height='600px',width = "1200px")))),
+                       hidden(div(id="Space_hold_div",shinycssloaders::withSpinner(plotOutput("Space_hold",height='200px',width = "200px")))),
+                       hidden(div(id="GO_Heatmap_div",shinycssloaders::withSpinner(plotlyOutput("GO_Heatmap",height='600px',width = "1200px")))),                                                              
                         textAreaInput(inputId = "GENE_GO_FC_RPKM",label = "GO RPKM Table",value="",width = '800px', height='300px')
                        )#mainPanel
                      )#sidebarLayout
@@ -919,7 +869,7 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                           h5(id="h4DEOGOGroupVSample",radioButtons(inputId = "DEO_GO_Group_v_Sample",label = "Analyze Groups or Samples?",choices = c("Groups","Samples"),inline = T,selected = "Samples")),
                           h5(id = "h4DEOControlGOTest",selectInput(inputId = "DEO_Control_GO_Test",label = "Select Control",choices = c(""), selected = NULL, multiple = F)),
                           h5(id = "h4DEOSubjectsGOTest",selectInput(inputId = "DEO_Subjects_GO_Test",label = "Select Subjects",choices = c(""), selected = NULL, multiple = T)),
-			  h5(id = "h4DEOGOClass", selectInput(inputId = "DEO_GO_CLASS",label = "Select GO Class",choices = GO.info[match(c("GO:0003674","GO:0005575","GO:0000003","GO:0001906","GO:0002376","GO:0006791","GO:0006794","GO:0007610","GO:0008152","GO:0008283","GO:0009758","GO:0009987","GO:0015976","GO:0019740","GO:0022414","GO:0022610","GO:0023052","GO:0032501","GO:0032502","GO:0040007","GO:0040011","GO:0043473","GO:0044848","GO:0048511","GO:0050896","GO:0051179","GO:0051704","GO:0065007","GO:0071840","GO:0098743","GO:0098754","GO:0099531"),GO.info[,1]),2][c(1,2,5,9,10,12,15,19,24,25,27,28,17,20,30,3,4,8,11,13,14,16,21,22,23,26,29,31,32,6,7)], selected = NULL, multiple = F)),
+			  h5(id = "h4DEOGOClass", selectInput(inputId = "DEO_GO_CLASS",label = "Select GO Class",choices = Ontology_CLASS_SELECT, selected = NULL, multiple = F)),
                           h5(id = "h4DEOOntologyKeywordSelect",selectInput(inputId = "DEO_Ontology_Keyword_Select",label = "Choose Kewords",choices = DEO_Keywords, selected = NULL, multiple = T)),
                           #h5(id = "h4DEOKeywordText",textInput(inputId = "DEO_Keyword_Text",label = "Type in keyword (optional)", value = "",width = '300px',placeholder = "Sepearate keywords with ';'")),
 
@@ -945,22 +895,55 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                           mainPanel(
                          	 h5(id = "h4DEOGraphWidthFont",fluidRow(
                        		  column(width=3,sliderInput(inputId = "DEO_GO.Graph_Width",label = "Graph Width",min = 1,max = 4,value = 3)),
-                              column(width=3,sliderInput(inputId = "DEO_GO.Font_Size",label = "Font Size",min = 1,max = 25,value = 10)))),
-                               plotlyOutput("DEO_GO_Boxplot"),
-                               plotOutput("DEO_GO_Distribution"),
-                               plotlyOutput("DEO_GO_Heatmap_rowScale",height='600px',width = "1200px"),
+                            column(width=3,sliderInput(inputId = "DEO_GO.Font_Size",label = "Font Size",min = 1,max = 25,value = 10)))),
+                         	 hidden(div(id="DEO_GO_Boxplot_div",shinycssloaders::withSpinner(plotlyOutput("DEO_GO_Boxplot")))),
+                         	 hidden(div(id="DEO_GO_Distribution_div",shinycssloaders::withSpinner( plotOutput("DEO_GO_Distribution")))),
+                         	 hidden(div(id="DEO_GO_Heatmap_rowScale_div",shinycssloaders::withSpinner(plotlyOutput("DEO_GO_Heatmap_rowScale",height='600px',width = "1200px")))),
                                #plotOutput("DEO_GO_Heatmap",height='600px',width = "1600px"),                                                              
                                textAreaInput(inputId = "DEO_GENE_GO_FC_RPKM",label = "GO Expression Table",value="",width = '800px', height='300px')
                            )#mainPanel
                         )#sidebarLayout		
 				  )#box(
   		    	 )#fluidRow(                        		
-				)#tabItem(tabName = "Diff_Expressed_Ontologies",
+				),#tabItem(tabName = "Diff_Expressed_Ontologies",
 				#######################################
 				#######################################
-				
-)
-)
+
+                                ######################################
+                            ######################################
+                            ########### Session Info #############
+                            ######################################
+                            ######################################
+                                
+    tabItem(tabName = "Session_Info",
+            fluidRow(
+              box(
+                title = p(actionButton("Create_Groups_load_help", "", icon = icon("question"),
+                                       class = "btn-xs", title = "Help"),"Session Info (Restore/Load)"
+                          ),#title = p
+                width = 10, solidHeader = TRUE,
+                uiOutput("boxContent_Session_Info"),
+                p("Your current session ID is", textOutput(outputId = "Current_Session_ID", inline=T)),
+                fluidRow(
+                  column(width=5, h5(id = "h4Session_ID", textInput(inputId="Restore_Session_ID", label="Enter Session ID", placeholder="Enter Session ID"))),
+                  column(width=3, h5(id = "h4", actionButton(inputId = "Restore_Session", label = "Restore Session")))
+                  ),#fluidRow
+                p(textOutput(outputId = "Restore_Session_Progress", inline=T)),
+                fluidRow(column(width=5,h5(id="h4UploadSessionFile",fileInput("Upload_Session_File", "Choose 'Session' File (Rdata)"))),
+                         column(width=3,h5(id="h4ConfirmGroup",actionButton(inputId = "Upload_Session",label = "Upload Session")))),
+                fluidRow(column(width=2,h5(id="h4DownloadSession",downloadButton(outputId = "download_Session", label = "Download Session")))),
+                hidden(div(id="session_Wait_plot_div",shinycssloaders::withSpinner(plotOutput("session_Wait_plot"))))
+                )#box
+              )#fluidRow
+            
+              )#tabItem(tabName = "Session_Info",
+    #######################################
+    #######################################
+    ) ## tags$head
+			) ## body <- dashboardBody
+
+                      
+
 
 
 #DATA.Values = c()
@@ -969,7 +952,200 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
 #Group.Members=c()
 #GeneList=c()
 # Define server logic required to draw a histogram
-server <- function(input,output,session,DATA.Values,DATA.Values.5min=c(),Groups,Group.Members=c(),GeneList,Reads.Data_File_path,readData,pengRPKMTable=c(), Group.GTable,Gene.Choices=c(),PRE_GROUPS="",Reads_Reset=F,DATA.Values_Flag=F) {
+server <- function(input,output,session,DATA.Values=c(),DATA.Values.5min=c(),Groups=c(),Group.Members=c(),GeneList,Reads.Data_File_path,readData=c(),pengRPKMTable=c(), Group.GTable,Gene.Choices=c(),PRE_GROUPS="",Reads_Reset=F,DATA.Values_Flag=F) {
+
+
+output$Current_Session_ID <- renderText({
+    
+	IP_addr <- reactive(input$getIP)
+	IP_addr_Text <- capture.output(IP_addr(),split=F)
+	IP_addr_Text_Clean <- gsub("\"|\\[1\\]| ","",IP_addr_Text)
+	DATE = gsub("-",".",Sys.Date())
+
+	Session_ID_base = paste(as.character(IP_addr_Text_Clean),DATE,sep="_")
+
+	BackedUp_Sessions = system(paste("ls ",Backup.folder,sep=""),intern=T)
+
+	Session_iteration = 1
+	if( any(grepl(Session_ID_base,BackedUp_Sessions)))
+	{
+		Last_Session_iteration = max(sapply(BackedUp_Sessions[grep(Session_ID_base,BackedUp_Sessions)], function(X) as.numeric(tail(strsplit(X,split="_")[[1]],n=1))))
+		Session_iteration = Last_Session_iteration + 1
+
+	}#if( any(grepl(Session_ID_base,BackedUp_Sessions)))
+
+	Session_ID = paste(Session_ID_base,Session_iteration,sep="_")
+
+	Backup_Session_ID <<- Session_ID
+	Backup_Session_Folder <<- paste(Backup.folder,Session_ID,"/",sep="")
+	
+	if(!grepl("NULL",Backup_Session_Folder)) system(paste("mkdir",Backup_Session_Folder))
+	#system(paste("mkdir",Backup_Session_Folder))	
+
+      return(Session_ID)
+  })#output$Current_Session_ID <- renderText
+
+
+observeEvent(input$Restore_Session,ignoreInit = TRUE,{
+
+	disable("Restore_Session")
+  shinyjs::show(id = "session_Wait_plot_div") 
+
+  progress <- shiny::Progress$new()
+  # Make sure it closes when we exit this reactive, even if there's an error
+  on.exit(progress$close())
+  progress$set(message = "Restoring Session", value = 0)
+  progress$inc(0.1, detail =  paste("Progress: ",10,"% Please Wait",sep=""))
+  
+
+	Session_ID_Query = gsub(" ","",input$Restore_Session_ID)
+	BackedUp_Sessions = system(paste("ls ",Backup.folder,sep=""),intern=T)
+
+
+	output$Restore_Session_Progress <- renderText("Searching for Session ID...")	
+	output$Restore_Session_Progress <- renderText("Session Not Found")
+	if( any( BackedUp_Sessions == Session_ID_Query ))
+    {
+
+	  progress$inc(0.3, detail =  paste("Progress: ",20,"% Session ID Found",sep=""))
+	  
+		Session_Data_Files = system(paste("ls ", Backup.folder, "/", Session_ID_Query, "/*rdata", sep=""), intern=T)
+
+      if(length(Session_Data_Files) >= 1)
+      {
+
+        progress$inc(0.4, detail =  paste("Progress: ",40,"% Transferring Data",sep=""))
+        
+			  for(I in 1:length(Session_Data_Files))
+			  {
+
+				  output$Restore_Session_Progress <- renderText("Loading Data...")
+                    
+          load(Session_Data_Files[I])
+          
+          system(paste("cp",Session_Data_Files[I],Backup_Session_Folder))
+          
+			  }#for(I in 1:length(Session_Data_Files))
+
+        
+        
+        progress$inc(0.5, detail =  paste("Progress: ",50,"% Loading Data",sep=""))
+        
+        All_Objects = ls()
+
+        All_Objects = All_Objects[which(!All_Objects %in% c("I","Session_ID_Query","BackedUp_Sessions"))]
+
+        Make_Global_Object_Command = paste(All_Objects,"<<-", All_Objects)
+
+        for(Command in Make_Global_Object_Command)
+        {
+          eval(expr = parse(text = Command))
+
+        }#for(Command in Make_Global_Object_Command)
+        
+        progress$inc(0.7, detail =  paste("Progress: ",75,"% Generating Plots",sep=""))
+        
+        source("Scripts/Restore_Session_Script.R", local=T)
+        
+        progress$inc(0.99, detail =  paste("Progress: ",100,"% Session Restored",sep=""))
+        output$Restore_Session_Progress <- renderText("Session Restored.")
+
+     }#if(length(Session_Data_Files) >= 1)
+
+	} ## if( any( BackedUp_Sessions == Session_ID_Query ))
+
+
+	
+	enable("Restore_Session")	
+	shinyjs::hide(id = "session_Wait_plot_div") 
+})  ## observeEvent(input$Restore_Session
+
+
+
+observeEvent(input$Upload_Session,ignoreInit = TRUE,{
+  
+  disable("Upload_Session")
+  #Upload_Session_File
+  shinyjs::show(id = "session_Wait_plot_div") 
+  
+  progress <- shiny::Progress$new()
+  # Make sure it closes when we exit this reactive, even if there's an error
+  on.exit(progress$close())
+  progress$set(message = "Uploading Session", value = 0)
+  progress$inc(0.3, detail =  paste("Progress: ",10,"% Please Wait",sep=""))
+  
+  
+    Session_Data_Files = input$Upload_Session_File
+    
+    if(!is.null(Session_Data_Files$datapath))
+    {
+    
+      load(Session_Data_Files$datapath)
+  
+      All_Objects = ls()
+        
+      #All_Objects = All_Objects[which(!All_Objects %in% c("I","Session_ID_Query","BackedUp_Sessions"))]
+        
+      Make_Global_Object_Command = paste(All_Objects,"<<-", All_Objects)
+          
+      progress$set(message = "Uploading Session", value = 0)
+      progress$inc(0.5, detail =  paste("Progress: ",50,"% Loading Data",sep=""))
+      
+      for(Command in Make_Global_Object_Command)
+      {
+        eval(expr = parse(text = Command))
+          
+      }#for(Command in Make_Global_Object_Command)
+  
+      progress$set(message = "Uploading Session", value = 0)
+      
+      progress$inc(0.7, detail = paste("Progress: ",70,"% Loading Data",sep=""))
+      source("Scripts/Upload_Session_Script.R", local=T)
+      
+      progress$inc(0.8, detail = paste("Progress: ",85,"% Generating Plots",sep=""))
+      source("Scripts/Restore_Session_Script.R", local=T)
+      
+      
+    output$Restore_Session_Progress <- renderText("Session Uploaded")
+    }#if(!is.null(Session_Data_Files$datapath))
+  enable("Upload_Session")	
+  shinyjs::hide(id = "session_Wait_plot_div") 
+  progress$inc(1, detail = paste("Progress: ",100,"%",sep=""))
+})  ## observeEvent(input$Upload_Session,
+
+
+
+ output$download_Session <- downloadHandler(
+   filename = function() {
+     paste('Session_',Backup_Session_ID, '.rdata', sep='')
+   }, #filename = function() 
+   content = function(FILE) {
+     
+     disable("download_Session")
+     shinyjs::show(id = "session_Wait_plot_div") 
+     
+
+      Session_Data_Files = system(paste("ls ",Backup_Session_Folder, "/*rdata", sep=""), intern=T)
+      
+      if(length(Session_Data_Files) >= 1)
+      {
+        for(I in 1:length(Session_Data_Files))
+        {
+          load(Session_Data_Files[I])
+        }#for(I in 1:length(Session_Data_Files))
+        source("Scripts/Download_Session_Script.R", local=T)
+        
+       
+      
+        save(list= Selected_DATA, file =  FILE)
+        
+        
+        
+      }#if(length(Session_Data_Files) >= 1)
+      enable("download_Session")
+      shinyjs::hide(id = "session_Wait_plot_div") 
+   }#content = function(FILE) 
+ )#output$download_Session <- downloadHandler
 
 
 
@@ -1059,13 +1235,13 @@ observeEvent(input$file1,{
   
  observeEvent(input$Counts_EdgeR_help, {
     if (input$TABS == "Count_EdgeR_Data") {
-    			shinyjs::delay(ms = 500,shinyjs::show(id = "file1_Box_wrapper") )
+    			shinyjs::delay(ms = 100,shinyjs::show(id = "file1_Box_wrapper") )
     			#shinyjs::show(id = "file1_Box_wrapper")
-    		shinyjs::delay(ms = 500,shinyjs::show(id = "Sample_Select_Box_wrapper"))
+    		shinyjs::delay(ms = 100,shinyjs::show(id = "Sample_Select_Box_wrapper"))
 			#shinyjs::show(id = "Sample_Select_Box_wrapper")
-			shinyjs::delay(ms = 500,shinyjs::show(id = "Reads_Database_Box_wrapper"))
+			shinyjs::delay(ms = 100,shinyjs::show(id = "Reads_Database_Box_wrapper"))
 			#shinyjs::show(id = "Reads_Database_Box_wrapper")
-			shinyjs::delay(ms = 500,shinyjs::show(id = "Comparison_Box_wrapper"))
+			shinyjs::delay(ms = 100,shinyjs::show(id = "Comparison_Box_wrapper"))
 			
 
       rintrojs::introjs(session, options = list(
@@ -1454,40 +1630,40 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
     if(input$Select_input=="dbase"){isolate(Data_File_path <<- paste(Data.folder,"/",input$Data_User,"/",DATASET_SELECT,sep=""))}
     if(input$Select_input=="upload"){
       inFile.rpkm <- input$file_RPKM
-      print(inFile.rpkm)
-      print(input$file_RPKM)
       if (is.null(inFile.rpkm)) Data_File_path <<- ""
       if (!is.null(inFile.rpkm)) Data_File_path <<- inFile.rpkm$datapath}
-      print(Data_File_path)
 
     File.Check = c(Data_File_path)
 
-
-        if(file.exists(Data_File_path) & !dir.exists(Data_File_path)) {File.Check = readLines(Data_File_path)}
-    if(length(File.Check)==0 | nchar(Data_File_path)==0 | is.null(Data_File_path) | dir.exists(Data_File_path))
+    if(substr(toupper(Data_File_path),nchar(Data_File_path)-5,nchar(Data_File_path)) != ".RDATA")
     {
-      enable("Load_File")
-      return(NULL)
-    }
-    
-     
-     if(length(File.Check) < 2)
-     {
-       enable("Load_File")
-       shinyalert(title = "File format error",text = "Check file format\n\nPlease use a TAB-delimited file with the below format:\n\n Genes  Sample1  Sample2\nGene1 Value_1 Value_2\nGene2 Value_1 Value_2", type = "error")
-       return(NULL)
-     }
-     
-     
-     File.Check_columns = sapply(File.Check,function(X) length(strsplit(X,split = "\t")[[1]]))
-
-	 if(!all(File.Check_columns == File.Check_columns[1] & File.Check_columns[1] >= 2))
-	 {
-	   enable("Load_File")
-	   shinyalert(title = "ERROR: Check file format\n\nPlease use a TAB-delimited file with the below format:\n\n Genes  Sample1  Sample2\nGene1 Value_1 Value_2\nGene2 Value_1 Value_2", type = "error")
-       return(NULL)
-	 }
-    
+  
+      if(file.exists(Data_File_path) & !dir.exists(Data_File_path)) {File.Check = readLines(Data_File_path)}
+      
+      if(length(File.Check)==0 | nchar(Data_File_path)==0 | is.null(Data_File_path) | dir.exists(Data_File_path))
+      {
+        enable("Load_File")
+        return(NULL)
+      }
+      
+       
+       if(length(File.Check) < 2)
+       {
+         enable("Load_File")
+         shinyalert(title = "File format error",text = "Check file format\n\nPlease use a TAB-delimited file with the below format:\n\n Genes  Sample1  Sample2\nGene1 Value_1 Value_2\nGene2 Value_1 Value_2", type = "error")
+         return(NULL)
+       }
+   
+       
+       File.Check_columns = sapply(File.Check,function(X) length(strsplit(X,split = "\t")[[1]]))
+  
+  	 if(!all(File.Check_columns == File.Check_columns[1] & File.Check_columns[1] >= 2))
+  	 {
+  	   enable("Load_File")
+  	   shinyalert(title = "ERROR: Check file format\n\nPlease use a TAB-delimited file with the below format:\n\n Genes  Sample1  Sample2\nGene1 Value_1 Value_2\nGene2 Value_1 Value_2", type = "error")
+         return(NULL)
+  	 }
+    }#if(substr(toupper(Data_File_path),nchar(Data_File_path)-5,nchar(Data_File_path)) != ".RDATA")
 
     progress$inc(0.5, detail = "Please Wait")
     Sys.sleep(0.001)
@@ -1594,7 +1770,7 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
 		# rm(SAMPLE_NAMES)
 
 	 if(file.exists(gsub("data.RData","mData.RData",Data_File_path)))
-         {
+    {
 		RDA_metaDATA = load(gsub("data.RData","mData.RData",Data_File_path))
 		eval(expr = parse(text = paste("metaDATA.RAW =",RDA_metaDATA[1])))
 		
@@ -1611,6 +1787,7 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
 			    {
 			        Group_Name = gsub(" ","_",paste(colnames(metaDATA.RAW)[Group.inx[G]],GROUPS[K],sep = "_"))
 			        Group_Members = metaDATA.RAW[,ID.inx[1]][which(metaDATA.RAW[,Group.inx[G]] %in% GROUPS[K])]
+			        Group_Members = gsub("-",".",Group_Members)
 			        GROUP_Data = c(GROUP_Data,paste(Group_Name,":",paste(Group_Members,collapse = ";"),sep=""))
 			    }#for(K in 1:length(GROUPS))
 			}#for(G in 1:length(Group.inx))
@@ -1719,27 +1896,23 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
 
         Report.List.Reads <<- c(Report.List.Reads,list(MDS_Distance.plot.points))
    }#if(nchar(input$Data_set)>1 | length(File.Check)!=0)
+    
+    shinyjs::show(id = "distPlot_div")  
     output$distPlot <- renderPlot({
       
       
       if(nchar(input$Data_set)>1 | length(File.Check)!=0)
       {
-        #d = dist(t(DATA.Values[,1:ncol(DATA.Values)]))
-        #fit <- isoMDS(d, k=2)
-        
-        #par(xpd=NA)
-        #x <- fit$points[,1]
-        #y <- fit$points[,2]
-        #plot(x, y, xlab="Coordinate 1", ylab="Coordinate 2",
-        #     main="Nonmetric MDS (Combined Medium)\nAll genes",pch=16,type='n')
-        #text(x, y, labels = colnames(DATA.Values[,1:ncol(DATA.Values)]), cex=.8)
-
+      
+	MDS_Distance_distPlot = MDS_Distance.plot
+	save(list = c("MDS_Distance_distPlot"), file=paste(Backup_Session_Folder,"/distPlot.rdata",sep=""))  
+ 
         MDS_Distance.plot
 
       }#if(nchar(input$Data_set)>1 | length(File.Check)!=0)
       # generate bins based on input$bins from ui.R
       
-    })
+    }) ##  output$distPlot <- renderPlot({
     
     #####################################
     #####################################
@@ -1776,7 +1949,9 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
       updateSelectizeInput(session, inputId = "Control_GSEA_Test",label = "Select Control",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = colnames(DATA.Values)[1:ncol(DATA.Values)][1])
       updateSelectizeInput(session, inputId = "Query_GSEA_Test",label = "Select Query",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = colnames(DATA.Values)[1:ncol(DATA.Values)][ncol(DATA.Values)])
       #updateSelectizeInput(session, inputId="Group.Compare.GeneList", label = "Select Genes (max:12)", choices = Gene.Choices,selected = NULL)
-      
+     
+      save(list = c("DATA.Values","DATA.Values.5min","GeneList","Data_File_path"), file=paste(Backup_Session_Folder,"/DATA_VALUES.rdata",sep=""))  
+ 
       progress$inc(0.9, detail = "Please Wait")
       Sys.sleep(0.001)
       
@@ -1875,7 +2050,9 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
         		
            	}
         }
-                
+    
+	
+	save(list = c("Groups","Group.GTable","Group.Members","Groups.Medians.Matrix","PRE_GROUPS","Group_Count"), file=paste(Backup_Session_Folder,"/Group_data.rdata",sep=""))              
         
       }#if(nchar(input$Data_set)>1)
     }#if(nchar(as.character(input$Group_Name))>=1 & nchar(as.character(input$All_Conditions))>=1)
@@ -2017,10 +2194,14 @@ obs.Group.Include.Color <- observeEvent(input$Group.Include.Color,ignoreInit = T
 		progress$inc(0.7, detail = paste("Please Wait - Created", Groups[k] ,"Table"))
         	Sys.sleep(0.001)	
         }#for(k in 1:length(Groups))
+
+	
+	save(list = c("Groups","Group.GTable","Group.Members","Groups.Medians.Matrix","PRE_GROUPS","Group_Count"), file=paste(Backup_Session_Folder,"/Group_data.rdata",sep=""))     
         
-	    progress$inc(0.8, detail = "Please Wait - Complete")
-            Sys.sleep(0.001)
+	 progress$inc(0.8, detail = "Please Wait - Complete")
+         Sys.sleep(0.001)
         
+	
       }#if(Total_Groups>=1)
     }#if(length(Groups>=1))
   })#obs.Confirm.Group.button <- observeEvent(input$Confirm_Group,{
@@ -2155,6 +2336,7 @@ gg_color_hue <- function(n) {hues = seq(15, 375, length = n + 1);hcl(h = hues, l
 COLOR.List = gg_color_hue(length(Condition.index.list))
 COLOR.List = c(input$Single.Color.List,COLOR.List)[1:length(Condition.index.list)]
 
+shinyjs::show(id = "Stacked_Plot_div") 
 output$Stacked_Plot <- renderPlot({
 
 #if(input$Single.Xaxis.angle == 0 | input$Single.Xaxis.angle == 90) 
@@ -2243,29 +2425,21 @@ for(xyz in 1:length(gene.index.list))
   plot_list[[xyz]] = P
 }#for(xyz in 1:length(gene.index.list))
 
-	#do.call("grid.arrange", c(plot_list, ncol= (6-input$Sample.Graph_Width), nrow= 1))
-#GRID.COLS = min(length(gene.index.list),input$Sample.Graph_Width)
-#GRID.ROWS = ceiling(length(gene.index.list) / input$Sample.Graph_Width)
 Report.List.Reads <<- c(Report.List.Reads,plot_list)
 
 GRID.COLS = 6-input$Sample.Graph_Width
 GRID.ROWS = ceiling(length(gene.index.list) / GRID.COLS)
 
+
+Stacked_Plot_plot_list = plot_list
+Stacked_Plot_GRID.COLS = GRID.COLS
+
+save(list = c("Stacked_Plot_plot_list","Stacked_Plot_GRID.COLS"), file=paste(Backup_Session_Folder,"/Stacked_Plot.rdata",sep=""))  
+
 do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
 
-#grid.arrange(plot1, plot2, ncol=2)
 
-#plot(0)
-#        Width_Adjust = input$Sample.Graph_Width
-#        Font_Adjust = input$Sample.Font_Size
-#        n.rows =  ceiling(length(gene.index.list)/3)
-#        
-#        par(mfrow=c(n.rows,3*4/Width_Adjust))
-#        for(xyz in 1:length(gene.index.list))
-#        {
-#          barplot(as.numeric(as.matrix(DATA.Values.5min[gene.index.list[xyz],Condition.index.list])),names.arg=colnames(DATA.Values.5min)[Condition.index.list],main=GeneList[gene.index.list[xyz]],las=2,col=(xyz+1),cex.names=0.8*Font_Adjust,cex.main=1*Font_Adjust,cex.axis=1*Font_Adjust)
-#        }
-#        par(mfrow=c(1,1))
+
       })#output$Stacked_Plot <- renderPlot({
       
       
@@ -2273,6 +2447,7 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
       {
         output$Single.Sample.heatmap.label <- renderText({"Heatmap: Relative gene expression"})
         
+        shinyjs::show(id = "Single.Sample.heatmap_div") 
         output$Single.Sample.heatmap <- renderPlot({
           
           Font_Adjust = input$Sample.Font_Size
@@ -2286,10 +2461,17 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
             }
           }
           
-          
+         
+
           BP8 = pheatmap(Temp.expr.table, cluster_cols = FALSE, cluster_rows = TRUE, scale = "row", cellwidth = 15, fontsize_row = 6*Font_Adjust, main = paste("Norm. Exp. of Selected Genes"))
+
+	  Single.Sample.heatmap_BP8 = BP8
+
+	  save(list = c("Single.Sample.heatmap_BP8"), file=paste(Backup_Session_Folder,"/Single_Sample_heatmap.rdata",sep=""))
+
+	  BP8
           
-        })
+        }) ## output$Single.Sample.heatmap <- renderPlot({
       }#if(nrow(expr.table)>=2 & ncol(expr.table)>=2)
       
       
@@ -2298,6 +2480,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
       if(nrow(expr.table)>=2)
       {
         output$Single.Sample.barplot.label <- renderText({"Barplots: Collated genes expressions in each condition"})
+        
+        shinyjs::show(id = "Single.Sample.barplot_div")
         output$Single.Sample.barplot = renderPlot({
         	
         gg_color_hue <- function(n) {hues = seq(15, 375, length = n + 1);hcl(h = hues, l = 65, c = 100)[1:n]}
@@ -2380,25 +2564,24 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
     		ylab("Expression")
 		  }
 
-			#GRID.COLS = min(length(gene.index.list),input$Sample.Graph_Width)
-			#GRID.ROWS = ceiling(length(gene.index.list) / input$Sample.Graph_Width)			
+
+		  Single.Sample.barplot_P = P
+		  Single.Sample.barplot_Width = input$Sample.Graph_Width
+
+		  save(list = c("Single.Sample.barplot_P","Single.Sample.barplot_Width"), file=paste(Backup_Session_Folder,"/Single_Sample_barplot.rdata",sep=""))
+
 		  Report.List.Reads <<- c(Report.List.Reads,list(P)) 
 		  do.call("grid.arrange", c(list(P), ncol= (6-input$Sample.Graph_Width), nrow= 1))
 	
 
       	  	
         	
-          #Width_Adjust = input$Sample.Graph_Width
-          #Font_Adjust = input$Sample.Font_Size
-          #par(mfrow=c(1,5-Width_Adjust))
-          #BP7 = barplot(expr.table,beside=T,names.arg=colnames(DATA.Values.5min)[Condition.index.list],col=c(2:(length(Single.Compare.GeneList)+1)),las=2,legend.text = Single.Compare.GeneList,cex.names=0.8*Font_Adjust,cex.main=1*Font_Adjust,cex.axis=1*Font_Adjust)
-          #par(mfrow=c(1,1))
-        }) 
+        }) ## output$Single.Sample.barplot = renderPlot
       }#if(nrow(expr.table)>=2)
       
       
       
-      
+ 
       if((nrow(expr.table)>=3) & (ncol(expr.table)>=3))
       {
         d = dist(t(expr.table))
@@ -2421,18 +2604,18 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
         Report.List.Reads <<- c(Report.List.Reads,list(MDS_Distance.plot.points))
 
         output$MDS_PLOT.Samples.label <- renderText("MDSPlot: Based on selected genes only")
+
+        shinyjs::show(id = "MDS_PLOT.Samples_div")
         output$MDS_PLOT.Samples <- renderPlot({
-          #d = dist(t(expr.table))
-          #fit <- isoMDS(d, k=2)
-          #par(xpd=NA)
-          #x <- fit$points[,1]
-          #y <- fit$points[,2]
-          #plot(x, y, xlab="Coordinate 1", ylab="Coordinate 2",
-          #     main="Nonmetric MDS plot using selected genes",pch=16,type='n')
-          #text(x, y, labels = colnames(expr.table), cex=.8) 
-          #par(xpd=F)
+
+
 	   MDS_Distance.plot
-        })
+
+        }) ## output$MDS_PLOT.Samples <- renderPlot
+
+	MDS_Distance.plot_MDS_PLOT.Samples = MDS_Distance.plot
+	save(list = c("MDS_Distance.plot_MDS_PLOT.Samples"), file=paste(Backup_Session_Folder,"/MDS_PLOT.Samples.rdata",sep=""))     
+	
       }#if(nrow(expr.table)>=3)
       
     }#if(length(Single.Compare.GeneList)>=1)
@@ -2459,8 +2642,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
     Sys.sleep(0.001)
     ######################
     
-    output$Single.Sample.barplot.label <- renderText({" "})
-    output$Single.Sample.barplot <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
+    #output$Single.Sample.barplot.label <- renderText({" "})
+    #output$Single.Sample.barplot <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
     
     output$Group.boxplot.label <- renderText({" "})
     output$Group.boxplot <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
@@ -2549,6 +2732,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
       
       
       output$Group.stackedPlot.label <- renderText({"Barplots: Median Gene expressions compared between groups (SEM)"})
+      
+      shinyjs::show(id = "Group.stackedPlot_div")
       output$Group.stackedPlot <- renderPlot({
         
         Width_Adjust = input$Group.Graph_Width
@@ -2557,6 +2742,16 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
         n.rows =  ceiling(length(Gene.Index)/3)
         
         par(mfrow=c(n.rows,3*4/Width_Adjust))
+
+
+	GSP_Width_Adjust = Width_Adjust
+	GSP_Gene.Index = Gene.Index
+	GSP_Groups.Medians = Groups.Medians
+	GSP_Groups.sem.max = Groups.sem.max
+	GSP_Font_Adjust = Font_Adjust
+
+	save(list = c("GSP_Gene.Index","GSP_Groups.Medians","GSP_Groups.sem.max","GSP_Font_Adjust","GSP_Width_Adjust"), file=paste(Backup_Session_Folder,"/Group_stackedPlot.rdata",sep=""))
+
         for(xyz in 1:length(Gene.Index))
         {
           bpgp.stackSEM = barplot(as.numeric(as.matrix(Groups.Medians[xyz,])),ylim = c(0,max(Groups.sem.max[xyz,])),names.arg=colnames(Groups.Medians),main=rownames(Groups.Medians)[xyz],las=2,col=(xyz+1),cex.names=0.8*Font_Adjust,cex.main=1*Font_Adjust,cex.axis=1*Font_Adjust)
@@ -2567,13 +2762,26 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
       })#output$Group.stackedPlot <- renderPlot({
       
       output$Group.stackedPlot.maxmin.label <- renderText({"Barplots: Median Gene expressions compared between groups (error bars: Min/Max range)"})
+      
+      shinyjs::show(id = "Group.stackedPlot.maxmin_div")
       output$Group.stackedPlot.maxmin <- renderPlot({
         
         n.rows =  ceiling(length(Gene.Index)/3)
         
         Width_Adjust = input$Group.Graph_Width
         Font_Adjust = input$Group.Font_Size
+
         par(mfrow=c(n.rows,3*4/Width_Adjust))
+
+	GSP_MM_Width_Adjust = Width_Adjust
+	GSP_MM_Font_Adjust = Font_Adjust
+	GSP_MM_Gene.Index = Gene.Index
+	GSP_MM_Groups.Medians = Groups.Medians
+	GSP_MM_Groups.Max = Groups.Max
+	GSP_MM_Groups.Min = Groups.Min
+
+	save(list = c("GSP_MM_Gene.Index","GSP_MM_Groups.Medians","GSP_MM_Groups.Max","GSP_MM_Groups.Min","GSP_MM_Font_Adjust","GSP_MM_Width_Adjust"), file=paste(Backup_Session_Folder,"/Group_stackedPlot_MM.rdata",sep=""))
+
         for(xyz in 1:length(Gene.Index))
         {
           bpgp.stackMM = barplot(as.numeric(as.matrix(Groups.Medians[xyz,])),names.arg=colnames(Groups.Medians),main=rownames(Groups.Medians)[xyz],las=2,col=(xyz+1),ylim=c(0,max(Groups.Max[xyz,])),cex.names=0.8*Font_Adjust,cex.main=1*Font_Adjust,cex.axis=1*Font_Adjust)
@@ -2586,6 +2794,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
       
       
       output$Group.boxplot.label <- renderText({"Boxplots: Group RPKM values"})
+      
+      shinyjs::show(id = "Group.boxplot_div")
       output$Group.boxplot <- renderPlot({
         
         Width_Adjust = input$Group.Graph_Width
@@ -2617,8 +2827,6 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
         }#for(x in 1:length(Gene.Index))
         par(mfrow=c(1,1))
         
-        #print(BP.List)
-        #print(GTable)
         
         #if(length(Condition.index.list)>1) Gmatrix = data.frame(DATA.Values.5min[gene.index.list,Condition.index.list])
 
@@ -2729,6 +2937,12 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS))
 GRID.COLS = 6-input$Group.Graph_Width
 GRID.ROWS = ceiling(length(unique(GTable$Gene)) / GRID.COLS)
 
+Group.boxplot_GRID.COLS = GRID.COLS
+Group.boxplot_GRID.ROWS = GRID.ROWS
+Group.boxplot_plot_list = plot_list
+
+save(list = c("Group.boxplot_plot_list","Group.boxplot_GRID.ROWS","Group.boxplot_GRID.COLS"), file=paste(Backup_Session_Folder,"/Group_boxplot.rdata",sep=""))
+
 Report.List.Reads <<- c(Report.List.Reads,plot_list)
 do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
         
@@ -2743,6 +2957,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
       	
       	
       output$Group.barplot.label <- renderText({"Barplots: Mean gene expression in each group"})
+      
+      shinyjs::show(id = "Group.barplot_div")
       output$Group.barplot <- renderPlot({
 
 
@@ -2761,123 +2977,128 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
 
 	
 
-	plot_list = list()
-	for(xyz in 1:length(unique(GTable$Genes)))
-	{
-
-	  GNAME = unique(GTable$Genes)[xyz]
+  	plot_list = list()
+  	for(xyz in 1:length(unique(GTable$Genes)))
+  	{
   
-  print(subset(GTable,(GTable$Genes %in% GNAME)))[1:7,]
-  print(xyz)
-
-	  if(input$Group.Theme.List == "default")
-	  {
-  	 	 P = ggplot(data= subset(GTable,(GTable$Genes %in% GNAME)), aes(x= Groups, y=Expression, fill = Groups)) +
-   		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
-  		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
-         scale_fill_manual(values=COLOR.List) +
-   		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
-   		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Genes)[xyz],"expression"))  		 
-  	  }
-
-
-  if(input$Group.Theme.List == "Classic")#theme_classic
-  {
-  	 	 P = ggplot(data= subset(GTable,(Genes %in% GNAME)), aes(x= Groups, y= Expression, fill = Groups)) +
-   		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
-  		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
-   		 theme_classic()+
-   		 scale_fill_manual(values=COLOR.List) + 
-   		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
-   		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Genes)[xyz],"expression"))  
-
-  }
-    if(input$Group.Theme.List == "Black and White")#theme_bw
-  {
-     	 P = ggplot(data= subset(GTable,(Genes %in% GNAME)), aes(x= Groups, y= Expression, fill = Groups)) +
-   		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
-  		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
-   		 theme_bw()+
-   		 scale_fill_manual(values=COLOR.List) + 
-   		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
-   		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Genes)[xyz],"expression"))  
-
-  }
+  	  GNAME = unique(GTable$Genes)[xyz]
     
-    if(input$Group.Theme.List == "Dark")#theme_dark
-  {
-         P = ggplot(data= subset(GTable,(Genes %in% GNAME)), aes(x= Groups, y= Expression, fill = Groups)) +
-   		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
-  		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
-   		 theme_dark()+
-   		 scale_fill_manual(values=COLOR.List) + 
-   		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
-   		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Genes)[xyz],"expression")) 
-  }
-
-
-    if(input$Group.Theme.List == "Test")#theme_test
-  {
-     	 P = ggplot(data= subset(GTable,(Genes %in% GNAME)), aes(x= Groups, y= Expression, fill = Groups)) +
-   		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
-  		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
-   		 theme_test()+
-   		 scale_fill_manual(values=COLOR.List) + 
-   		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
-   		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Genes)[xyz],"expression")) 
-  }
   
-    if(input$Group.Theme.List == "Void")#theme_void
-  {
-     	 P = ggplot(data= subset(GTable,(Genes %in% GNAME)), aes(x= Groups, y= Expression	, fill = Groups)) +
-   		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
-  		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
-   		 theme_void()+
-   		 scale_fill_manual(values=COLOR.List) + 
-   		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
-   		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
-   		 ylab(paste(unique(GTable$Genes)[xyz],"expression")) 
-  }
-
-
-  plot_list[[xyz]] = P
-}
-
-			#do.call("grid.arrange", c(list(P), ncol= (6-input$Sample.Graph_Width), nrow= 1))
-
-GRID.COLS = 6-input$Group.Graph_Width
-GRID.ROWS = ceiling(length(unique(GTable$Genes)) / GRID.COLS)
-
-Report.List.Reads <<- c(Report.List.Reads,plot_list)
-do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS)) 	 
-      	 
+  	  if(input$Group.Theme.List == "default")
+  	  {
+    	 	 P = ggplot(data= subset(GTable,(GTable$Genes %in% GNAME)), aes(x= Groups, y=Expression, fill = Groups)) +
+     		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
+    		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
+           scale_fill_manual(values=COLOR.List) +
+     		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
+     		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
+     		 ylab(paste(unique(GTable$Genes)[xyz],"expression"))  		 
+    	  }
+  
+  
+    if(input$Group.Theme.List == "Classic")#theme_classic
+    {
+    	 	 P = ggplot(data= subset(GTable,(Genes %in% GNAME)), aes(x= Groups, y= Expression, fill = Groups)) +
+     		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
+    		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
+     		 theme_classic()+
+     		 scale_fill_manual(values=COLOR.List) + 
+     		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
+     		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
+     		 ylab(paste(unique(GTable$Genes)[xyz],"expression"))  
+  
+    }
+      if(input$Group.Theme.List == "Black and White")#theme_bw
+    {
+       	 P = ggplot(data= subset(GTable,(Genes %in% GNAME)), aes(x= Groups, y= Expression, fill = Groups)) +
+     		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
+    		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
+     		 theme_bw()+
+     		 scale_fill_manual(values=COLOR.List) + 
+     		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
+     		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
+     		 ylab(paste(unique(GTable$Genes)[xyz],"expression"))  
+  
+    }
       
-     })#output$Group.barplot <- renderPlot({
+      if(input$Group.Theme.List == "Dark")#theme_dark
+    {
+           P = ggplot(data= subset(GTable,(Genes %in% GNAME)), aes(x= Groups, y= Expression, fill = Groups)) +
+     		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
+    		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
+     		 theme_dark()+
+     		 scale_fill_manual(values=COLOR.List) + 
+     		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
+     		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
+     		 ylab(paste(unique(GTable$Genes)[xyz],"expression")) 
+    }
+  
+  
+      if(input$Group.Theme.List == "Test")#theme_test
+    {
+       	 P = ggplot(data= subset(GTable,(Genes %in% GNAME)), aes(x= Groups, y= Expression, fill = Groups)) +
+     		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
+    		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
+     		 theme_test()+
+     		 scale_fill_manual(values=COLOR.List) + 
+     		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
+     		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
+     		 ylab(paste(unique(GTable$Genes)[xyz],"expression")) 
+    }
+    
+      if(input$Group.Theme.List == "Void")#theme_void
+    {
+       	 P = ggplot(data= subset(GTable,(Genes %in% GNAME)), aes(x= Groups, y= Expression	, fill = Groups)) +
+     		 stat_summary(geom = "bar", fun.y = mean, position = "dodge") +
+    		 stat_summary(geom = "errorbar", fun.data = mean_se, position = position_dodge(.9),width=0.5,size=1)+ 
+     		 theme_void()+
+     		 scale_fill_manual(values=COLOR.List) + 
+     		 theme(axis.text.x = element_text(angle=input$Group.Xaxis.angle, hjust = HJUST, vjust = VJUST)) + 
+     		 theme(text = element_text(size=5*(1+input$Group.Font_Size))) + 
+     		 ylab(paste(unique(GTable$Genes)[xyz],"expression")) 
+    }
+  
+  
+    plot_list[[xyz]] = P
+  }#for(xyz in 1:length(unique(GTable$Genes)))
+  
+  			#do.call("grid.arrange", c(list(P), ncol= (6-input$Sample.Graph_Width), nrow= 1))
+  
+  GRID.COLS = 6-input$Group.Graph_Width
+  GRID.ROWS = ceiling(length(unique(GTable$Genes)) / GRID.COLS)
+  
+  Group.barplot_GRID.COLS = GRID.COLS
+  Group.barplot_GRID.ROWS = GRID.ROWS
+  Group.barplot_plot_list = plot_list
+  
+  save(list = c("Group.barplot_plot_list","Group.barplot_GRID.ROWS","Group.barplot_GRID.COLS"), file=paste(Backup_Session_Folder,"/Group_barplot.rdata",sep=""))
+  
+  
+  Report.List.Reads <<- c(Report.List.Reads,plot_list)
+  do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS)) 	 
+        	 
       
+     
+  })#output$Group.barplot <- renderPlot({
       
-      
-      
+  
       output$Group.barplot.sem.label <- renderText({"Barplots: Collated gene expression medians in each Group (error bars: standard error)"})
+      
+      shinyjs::show(id = "Group.barplot.sem_div")
       output$Group.barplot.sem <- renderPlot({
       	
-      	
-      	
-     GTable = Group.GTable[which(Group.GTable$Groups %in% Group.Compare.Condition & Group.GTable$Genes %in% Group.Compare.GeneList),]
+     
+        GTable = Group.GTable[which(Group.GTable$Groups %in% Group.Compare.Condition & Group.GTable$Genes %in% Group.Compare.GeneList),]
       	 
-    gg_color_hue <- function(n) {hues = seq(15, 375, length = n + 1);hcl(h = hues, l = 65, c = 100)[1:n]}
-	COLOR.List = gg_color_hue(length(unique(GTable$Group)))
-	COLOR.List = c(input$Group.Color.List,COLOR.List)[1:length(unique(GTable$Group))]
+        gg_color_hue <- function(n) {hues = seq(15, 375, length = n + 1);hcl(h = hues, l = 65, c = 100)[1:n]}
+	      COLOR.List = gg_color_hue(length(unique(GTable$Group)))
+	      COLOR.List = c(input$Group.Color.List,COLOR.List)[1:length(unique(GTable$Group))]
 
 
-	if(input$Group.Xaxis.angle == 0) 
-	{HJUST =0.5;VJUST = 1} else if (input$Group.Xaxis.angle == 90) 
-	{HJUST = 1;VJUST = 0.5} else {HJUST = 1; VJUST=1}
-
+    	if(input$Group.Xaxis.angle == 0) 
+    	{HJUST =0.5;VJUST = 1} else if (input$Group.Xaxis.angle == 90) 
+    	{HJUST = 1;VJUST = 0.5} else {HJUST = 1; VJUST=1}
+    
 
 	
 
@@ -2970,6 +3191,13 @@ Report.List.Reads <<- c(Report.List.Reads,plot_list)
 GRID.COLS = 6-input$Group.Graph_Width
 GRID.ROWS = 1
 
+Group.barplot.sem_GRID.COLS = GRID.COLS
+Group.barplot.sem_GRID.ROWS = GRID.ROWS
+Group.barplot.sem_plot_list = plot_list
+
+save(list = c("Group.barplot.sem_plot_list","Group.barplot.sem_GRID.ROWS","Group.barplot.sem_GRID.COLS"), file=paste(Backup_Session_Folder,"/Group_barplot_sem.rdata",sep=""))
+
+
 do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS)) 	
 
       })#output$Group.barplot.sem <- renderPlot({
@@ -2981,6 +3209,8 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
       {
         
         output$Group.heatmap.label <- renderText({"heatmap: Relative gene expression among selected groups"})
+        
+        shinyjs::show(id = "Group.heatmap_div")
         output$Group.heatmap = renderPlot({
           Font_Adjust = input$Group.Font_Size
           
@@ -2994,9 +3224,17 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
           }#for(k in 1:nrow(Groups.Medians))
           
           HM.GP = pheatmap((Temp.Groups.Medians), cluster_cols = FALSE, cluster_rows = TRUE, scale = "row", cellwidth = 15, fontsize_row = 6*Font_Adjust,fontsize_col = 6*Font_Adjust,main = paste("Norm. Exp. of Selected Genes"))
-          #pheatmap(cbind(c(0,0.000001),c(0,.000001)))
-        })
+
+	  Group_heatmap_HM.GP = HM.GP
+	  save(list = c("Group_heatmap_HM.GP"), file=paste(Backup_Session_Folder,"/Group_heatmap.rdata",sep=""))
+
+	  HM.GP
+
+        }) ## output$Group.heatmap = renderPlot
+
         output$Group.members.heatmap.label <- renderText({"heatmap: Relative gene expression among group members"})
+        
+        shinyjs::show(id = "Group.members.heatmap_div")
         output$Group.members.heatmap = renderPlot({
           
           Font_Adjust = input$Group.Font_Size
@@ -3015,7 +3253,11 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
           
           HM.Mem.GP = pheatmap(Temp.Group.Member.matrix, cluster_cols = FALSE, cluster_rows = TRUE, scale = "row", cellwidth = 15, fontsize_row = 6*Font_Adjust,fontsize_col = 6*Font_Adjust, main = paste("Norm. Exp. of Selected Genes"))
           
+	  Group_heatmap_HM.Mem.GP = HM.Mem.GP
+          save(list = c("Group_heatmap_HM.Mem.GP"), file=paste(Backup_Session_Folder,"/Group_mem_heeatmap.rdata",sep=""))
           
+	  HM.Mem.GP
+
         })#output$Group.members.heatmap = renderPlot({
         
       }#if(nrow(Groups.Medians)>=2)
@@ -3044,18 +3286,18 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
         Report.List.Reads <<- c(Report.List.Reads,list(MDS_Distance.plot.points))
 
         output$Group.MDS_PLOT.Samples.label <- renderText({"Group MDS Plot: Based on selected genes only"})
+        
+        shinyjs::show(id = "Group.MDS_PLOT.Samples_div")
         output$Group.MDS_PLOT.Samples <- renderPlot({
-       #   d = dist(t(Groups.Medians))
-       #   fit <- isoMDS(d, k=2)
-       #   par(xpd=NA)
-       #   x <- fit$points[,1]
-       #   y <- fit$points[,2]
-       #   plot(x, y, xlab="Coordinate 1", ylab="Coordinate 2",
-       #        main="Nonmetric MDS plot using selected genes",pch=16,type='n')
-       #   text(x, y, labels = colnames(Groups.Medians), cex=.8) 
-       #   par(xpd=F)
-	MDS_Distance.plot
+
+		      MDS_Distance.plot
+
         })#output$Group.MDS_PLOT.Samples <- renderPlot({
+
+
+	Group.MDS_Distance.plot = MDS_Distance.plot
+	save(list = c("Group.MDS_Distance.plot"), file=paste(Backup_Session_Folder,"/Group.MDS_PLOT.Samples.rdata",sep=""))  
+
       }#if((nrow(Groups.Medians)>=3) & (ncol(Groups.Medians)>=3))
       
       
@@ -3108,7 +3350,6 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
        Output_Message = dataINFO
      }
      
-     #print(Output_Message)
    })#output$Reads.User_Data_Info <- renderText({
    
    
@@ -3169,17 +3410,12 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
 	 		i = length(READS_FILE_LIST)
 	 		
  			New.Data.Table = read.delim(filename)
- 			 print(filename)	
- 			 print(nrow(New.Data.Table))
- 			 print(ncol(New.Data.Table))
 	 		 	
 	 		GENE.ID.List = sapply(New.Data.Table[,2],function(X) if(substr(X,1,3)=="ENS"){return(unlist(strsplit(as.character(X),split="\\."))[1])}else{return(as.character(X))})
  		
 	 		ID.INX = which.max(apply(GENE_ID_Match, MARGIN=2, function(X) length(which(X %in% GENE.ID.List))))
  			ID.INX.max = max(apply(GENE_ID_Match, MARGIN=2, function(X) length(which(X %in% GENE.ID.List))))
  		
- 			print(ID.INX)
- 			print(ID.INX.max)
  		
 	 		if(length(ID.INX.max)<2) 
 	 		{
@@ -3245,7 +3481,6 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
       if (is.null(inFile.rpkm)) Data_File_path <<- ""
       if (!is.null(inFile.rpkm)) Data_File_path <<- inFile.rpkm$datapath}
     
-    print(Data_File_path)
     if(file.exists(Data_File_path) && !dir.exists(Data_File_path)) 
     {
     		File.Check = readLines(Data_File_path)
@@ -3254,7 +3489,6 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
       
      	filename = Data_File_path         
      	RPKM_FILE_LIST <<- c(RPKM_FILE_LIST,filename);  
-     	print(length(RPKM_FILE_LIST))
     }
     #RPKM_TABLE_DATA_added       
     
@@ -3274,8 +3508,6 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
  			ID.INX = which.max(apply(GENE_ID_Match, MARGIN=2, function(X) length(which(X %in% GENE.ID.List))))
  			ID.INX.max = max(apply(GENE_ID_Match, MARGIN=2, function(X) length(which(X %in% GENE.ID.List))))
  		
- 			print(ID.INX)
- 			print(ID.INX.max)
  		
 	 		if(length(ID.INX.max)<2) 
 	 		{
@@ -3309,7 +3541,6 @@ do.call("grid.arrange", c(plot_list, ncol= GRID.COLS, nrow= GRID.ROWS))
  	 			RPKM_TABLE_DATA_added <<- cbind(RPKM_TABLE_DATA_added_temp[match(INTERSECT.RNAME.List,RPKM_TABLE_DATA_added_temp[,1]),], New.Data.Table[match(INTERSECT.RNAME.List,New.Data.Table[,1]),4:ncol(New.Data.Table)])
  	 		}#if(length(INTERSECT.RNAME.List)>2)		 				 		
  		 }#if(i >1)		 	
- 		 #print(RPKM_TABLE_DATA_added)		
  	}
    })#obs.Edgr.RPKM.ADD_Data.button <- observeEvent(input$RPKM.Add_Data,{ 
    
@@ -3487,8 +3718,6 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
 	 		ID.INX = which.max(apply(GENE_ID_Match, MARGIN=2, function(X) length(which(X %in% GENE.ID.List))))
  			ID.INX.max = max(apply(GENE_ID_Match, MARGIN=2, function(X) length(which(X %in% GENE.ID.List))))
  		
- 			print(ID.INX)
- 			print(ID.INX.max)
  		
 	 		if(length(ID.INX.max)<2) 
 	 		{
@@ -3648,8 +3877,6 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
             colnames(allData.tSNE) = c("X","Y")
 
 			
-			print(dim(allData.tSNE))
-			print(allData.tSNE[1:4,])
 			
 			plotlyMargins <- list(
           		l = 50,
@@ -3659,15 +3886,17 @@ observeEvent(input$Reads.Load_Data,ignoreInit = TRUE,{
           		pad = 4
         		)
         
-            
-     		output$MDSPlot <- renderPlotly({
-       		##pdf(paste(Directory,"summary.Total.MDSplot.",filename,".pdf",sep=""),height=8,width=8)
-       			            plot_ly(x=allData.tSNE$X, y= allData.tSNE$Y,text=rownames(allData.tSNE)) %>%
-            layout(title = "t-SNE Plot",autosize = F, width = 600, height = 600, margin = plotlyMargins)
+			shinyjs::show(id = "MDSPlot_div")     
+     	output$MDSPlot <- renderPlotly({
+
+     		plot_ly(x=allData.tSNE$X, y= allData.tSNE$Y,text=rownames(allData.tSNE)) %>%
+            		layout(title = "t-SNE Plot",autosize = F, width = 600, height = 600, margin = plotlyMargins)
               
 
-       	 })
-       
+       	 }) ## output$MDSPlot <- renderPlotly({
+
+	 save(list = c("allData.tSNE","plotlyMargins"), file=paste(Backup_Session_Folder,"/allData.tSNE.rdata",sep=""))      
+ 
    
      }#if(length(readData[1,])>=3)
 #######################################################
@@ -3775,6 +4004,8 @@ Gene.Table.Data = paste(paste(colnames(pengRPKMTable),collapse="\t"),Gene.Table.
      
      Reads_Reset <<- T
      
+
+	 save(list = c("DATA.Values","DATA.Values.5min","GeneList","pengRPKMTable","Reads_Reset","DATA.Values_Flag","readData","file.datapath"), file=paste(Backup_Session_Folder,"/READS_VALUES.rdata",sep=""))
          progress$inc(10/nstep, detail = paste("Progress: ",100,"%",sep=""))
  
  
@@ -3869,7 +4100,9 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 ###############################################         
   progress$inc(1/nstep, detail = paste("Progress: ",10,"%",sep=""))
   Sys.sleep(0.001)
-  ###############################################  
+  ############################################### 
+
+  suppressWarnings(suppressPackageStartupMessages(library(DESeq2))) 
   
   output$ComparePlot1 <- renderPlotly(plot_ly())
   output$ComparePlot2 <- renderPlot(plot(0,cex=0,axes=F,xlab="",ylab=""))
@@ -3915,46 +4148,51 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
          Sample2 = input$Comparison[2]
          
          thresholdRatio <- as.numeric(input$Log2FCThreshold)
-		 experimentGroup = colnames(readData)
-		 rownames(readData) = make.unique(as.character(pengRPKMTable[,2]))
+	 experimentGroup = colnames(readData)
+	 rownames(readData) = make.unique(as.character(pengRPKMTable[,2]))
          rownames(pengRPKMTable) = make.unique(as.character(pengRPKMTable[,2]))
 		 
-		 xLabel <- "logCPM"       
+	 xLabel <- "logCPM"       
          yLabel <- paste("log2(",Sample2," Expression / ",Sample1," Expression)",sep="")
       
 
       
-           MIN.dim = min(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
-           MAX.dim = max(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
+           ComparePlot1_MIN.dim = min(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
+           ComparePlot1_MAX.dim = max(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
            
-           #####################
-           output$ComparePlot1 <- renderPlotly({
-             ########
-             ########
              
-             Point_Colors = rep("blue",nrow(pengRPKMTable))
+             ComparePlot1_Point_Colors = rep("blue",nrow(pengRPKMTable))
              Abs.Log2FC = abs(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]/pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]))
-             Point_Colors[which(Abs.Log2FC>=thresholdRatio)] = "red"
+             ComparePlot1_Point_Colors[which(Abs.Log2FC>=thresholdRatio)] = "red"
              
              
-             m <- list(
+             ComparePlot1_m <- list(
                l = 50,
                r = 50,
                b = 100,
                t = 100,
                pad = 4
              )
-        
-             plot_ly(x=log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)] +1),y=log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]+1),
-                     text = paste(rownames(pengRPKMTable),paste(Sample1,round(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)],2),sep=": "),paste(Sample2,round(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)],2),sep=": "),sep="\n"),
-                     marker = list(color = Point_Colors,size=3)
+       
+
+	     ComparePlot1_Table = pengRPKMTable[,c(Sample1,Sample2)]
+
+	#####################
+	shinyjs::show(id = "ComparePlot1_div")
+	output$ComparePlot1 <- renderPlotly({ 
+          ########
+	  ########
+             plot_ly(x=log2(ComparePlot1_Table[,1] +1),y=log2(ComparePlot1_Table[,2]+1),
+                     text = paste(rownames(ComparePlot1_Table),paste(colnames(ComparePlot1_Table)[1],round(ComparePlot1_Table[,1],2),sep=": "),paste(colnames(ComparePlot1_Table)[2],round(ComparePlot1_Table[,2],2),sep=": "),sep="\n"),
+                     marker = list(color = ComparePlot1_Point_Colors,size=3)
                      ) %>%
-               layout(autosize = F, width = 500, height = 500, margin = m) %>%
-               layout(xaxis = list(title = paste(Sample1,"log2(RPKM + 1)"),range=c(MIN.dim,MAX.dim)),yaxis = list(title = paste(Sample2,"log2(RPKM + 1)"), range=c(MIN.dim,MAX.dim)))
+               layout(autosize = F, width = 500, height = 500, margin = ComparePlot1_m) %>%
+               layout(xaxis = list(title = paste(colnames(ComparePlot1_Table)[1],"log2(RPKM + 1)"),range=c(ComparePlot1_MIN.dim,ComparePlot1_MAX.dim)),yaxis = list(title = paste(colnames(ComparePlot1_Table)[2],"log2(RPKM + 1)"), range=c(ComparePlot1_MIN.dim,ComparePlot1_MAX.dim)))
               
              
            })#output$ComparePlot1 <- renderPlot({
-         
+        
+	save(list = c("ComparePlot1_Table","ComparePlot1_MIN.dim","ComparePlot1_MAX.dim","ComparePlot1_m","ComparePlot1_Point_Colors"), file=paste(Backup_Session_Folder,"/ComparePlot1_Table.rdata",sep="")) 
 
          
        if(input$Reads.EdgeR_DEseq == "EdgeR")
@@ -3972,21 +4210,32 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
          
          
          experimentPair <- c(Sample1,Sample2) #choose a pair of experiments to compare
+        
          
-         
-         an.error.occured <- FALSE
-		 tryCatch( {  comparison <- exactTest(readData, pair = experimentPair) }
+        an.error.occured <- FALSE
+	 tryCatch( {  comparison <- exactTest(readData, pair = experimentPair) }
 		 , error = function(e) {an.error.occured <<- TRUE})
 
-		 if(an.error.occured)
-		 {
-			shinyalert(title = "Error comparing these samples", text="EdgeR Error:\n\nbinomTest: y1 and y2 must be non-negative\n\nTry DESeq", type = "warning")
-     		return(NULL)
-		 }
+	#	 {
+	#		shinyalert(title = "Error comparing these samples", text="EdgeR Error:\n\nbinomTest: y1 and y2 must be non-negative\n\nTry DESeq", type = "warning")
+     	#	return(NULL)
+	#	 }
 
-         
-         comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
-         
+        if(an.error.occured)
+	{
+		comparison <- exactTest(readData, pair = experimentPair, dispersion=0.1) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
+	}
+	
+	if(!an.error.occured)
+	{
+		comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
+	}	
+
+ 
+         #comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
+         #comparison <- exactTest(readData, pair = experimentPair, dispersion=0.1) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
+	 #comparison <- exactTestDoubleTail(y1 = readData$counts[,Sample1], y2 = readData$counts[,Sample2] , dispersion=0)
+	 
          
          comparisonTable <- comparison$table #rename the variable within comparison so RStudio won't complain all the time
          
@@ -4006,7 +4255,6 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            
            topGenesTable <- topGenes$table[topGenes$table$logCPM > 1,] #filter top genes for logCPM > 1, keep original variable intact
            
-           #print(topGenesTable[1:4,])
            
            allGenesTable <- allGenes$table #rename for ease
            
@@ -4043,33 +4291,39 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
       if(input$Reads.EdgeR_DEseq == "DESeq2")
       {
       	counts <- readData$counts
-      	print(counts[1:4,1:3])
 		# converting column gene symbols to rownames
 		#rownames(counts) <-  counts[,1]
 		#counts$gene_name <-  NULL
 		
-		print("check22")
 		
          Sample1 = input$Comparison[1]
          Sample2 = input$Comparison[2]
          
          experimentPair <- c(Sample1,Sample2) #choose a pair of experiments to compare
 
-		print("check23")
 
 
          an.error.occured <- FALSE
 		 tryCatch( {  comparison <- exactTest(readData, pair = experimentPair) }
 		 , error = function(e) {an.error.occured <<- TRUE})
 
-		 if(an.error.occured)
-		 {
-			shinyalert(title = "Error comparing these samples", text="Error:\n\nbinomTest: y1 and y2 must be non-negative", type = "warning")
-     		return(NULL)
-		 }#if(an.error.occured)
+		# if(an.error.occured)
+		# {
+		#	shinyalert(title = "Error comparing these samples", text="Error:\n\nbinomTest: y1 and y2 must be non-negative", type = "warning")
+     		#return(NULL)
+		# }#if(an.error.occured)
 
-         comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
-         
+         #comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
+        if(an.error.occured)
+        {
+                comparison <- exactTest(readData, pair = experimentPair, dispersion=0.1) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
+        }
+
+        if(!an.error.occured)
+        {
+                comparison <- exactTest(readData, pair = experimentPair) #compare the pair, add argument `dispersion = dataDispersion` if there aren't replicates
+        }
+
 
          comparisonTable <- comparison$table #rename the variable within comparison so RStudio won't complain all the time               
          mainTitle <- paste(Sample2,"vs.",Sample1,"(FC >",2**thresholdRatio,", p-value <",as.numeric(as.matrix(input$FDR_PvalThreshold)) ,")") #set up a title for graphs        
@@ -4081,7 +4335,6 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 
 
 		counts_Compare = counts[,which(colnames(counts) %in% c(Sample1, Sample2))]
-		print(counts_Compare[1:3,1:2])
 		counts_Compare = counts_Compare[,c(1,1,2,2)]
 		counts_Compare[,c(2,4)] <- counts_Compare[,c(2,4)]+1
 	
@@ -4163,16 +4416,8 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
              xlab(paste("log2FC (",Sample2,"/",Sample1,")",sep=""))+
              ylab("-log10(p-value)")+
              geom_text(data = FC2_table[1:ifelse(input$Reads.Volcano_Genes < nrow(FC2_table),input$Reads.Volcano_Genes,nrow(FC2_table)),], aes(x = logFC, y = -log10(PValue + 1e-300)), label = rownames(FC2_table)[1:ifelse(input$Reads.Volcano_Genes < nrow(FC2_table),input$Reads.Volcano_Genes,nrow(FC2_table))], color = "firebrick", size = input$Reads.Volcano_Font_Size, nudge_y = -0.2) #label the diff. expr. points
-#p1= ggplot(xlab = paste("log2FC (",Sample2,"/",Sample1,")",sep=""), ylab = "-log10(p-value)")+
-#               ggtitle(mainTitle)+ #put in the title
-#               theme_bw()+ #make background white, must come before theme function call
-#               theme(plot.title = element_text(hjust = .8, size = 15))+ #center title and make it bigger
-#               geom_point(data = evenExpression, aes(x = logFC, y= -log10(PValue + 1e-300)), alpha = 1/150)+ #plot the even expression points
-#               geom_point(data = FC2_table, aes(x = logFC, y = -log10(PValue + 1e-300)), color = "darkblue", alpha = 2/5)+ #plot the differentially expressed points
-#               geom_vline(xintercept = c(-log2(thresholdRatio), log2(thresholdRatio)), color = "forestgreen")+ #plot the vertical boundary lines
-               #geom_text(data = FC2_table, aes(x = logFC, y = -log10(PValue + 1e-300)), label = rownames(FC2_table), color = "firebrick", size = 2, nudge_y = -1) #label the diff. expr. points
-              # geom_text(data = FC2_table[1:ifelse(input$Reads.Volcano_Genes < nrow(FC2_table),input$Reads.Volcano_Genes,nrow(FC2_table)),], aes(x = logFC, y = -log10(PValue + 1e-300)), label = rownames(FC2_table)[1:ifelse(input$Reads.Volcano_Genes < nrow(FC2_table),input$Reads.Volcano_Genes,nrow(FC2_table))], color = "firebrick", size = input$Reads.Volcano_Font_Size, nudge_y = -0.2)
-        
+
+            shinyjs::show(id = "ComparePlot2_div")
            output$ComparePlot2 = renderPlot({
              #p1 #must be done to render the image
 	     PLOT_WIDTH = rep(2:10)
@@ -4180,10 +4425,15 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
              Volc.Reads.plot = grid.arrange(Volc.Reads,layout_matrix = rbind(PLOT_WIDTH))           
 	     Volc.Reads.plot = grid.arrange(Volc.Reads,layout_matrix = rbind(PLOT_WIDTH))
 	     Report.List.Reads <<- c(Report.List.Reads,list(Volc.Reads.plot))
+
+	     save(list = c("Volc.Reads.plot"), file=paste(Backup_Session_Folder,"/ComparePlot2.rdata",sep="")) 
+	     
 	     Volc.Reads.plot
 	      #Volc.Reads
            })#output$ComparePlot2 
-           
+          
+         
+
            ## Smear Plot
            
            yLabel <- paste("log2(",Sample2," Expression / ",Sample1," Expression)",sep="") #change the y label
@@ -4207,6 +4457,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
              
              #if(input$Reads.EdgeR_DEseq == "DESeq2")
              {
+               shinyjs::show(id = "ComparePlot3_div")
                output$ComparePlot3 = renderPlot({
              	 Plot_smear_Plot = ggplot(comparisonTable, aes(x=logCPM, y=logFC)) + geom_point(col=All_cols)+
   				 theme_bw()+
@@ -4216,24 +4467,19 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
   				 geom_text(label=paste("upregulated=",up),x=min(comparisonTable$logCPM)+(max(comparisonTable$logCPM)-min(comparisonTable$logCPM))/2, y = max(comparisonTable$logFC)-eigth)+
  				 xlab(xLabel)+
   				 ylab(yLabel)
+             	 
+           save(list = c("Plot_smear_Plot"), file=paste(Backup_Session_Folder,"/ComparePlot3.rdata",sep=""))
+           
   				 Plot_smear_Plot
+
+				 
   			  })#output$ComparePlot3
              }#if(input$Reads.EdgeR_DEseq == "DESeq2")
-          #  if(input$Reads.EdgeR_DEseq == "EdgeR")             
-          #  {	
-          #    output$ComparePlot3 = renderPlot({
-          #     plotSmear(comparison, de.tags = rownames(topGenesTable), main = mainTitle, xlab = xLabel, ylab = yLabel, ylim = c(-5,5), col = "grey")
-          #     abline(h=c(-1, 1), col = rep("orange", 2))
-          #     abline(v=1, col = "grey")
-          #     text(8, 3, paste("upregulated=",up))
-          #     text(8, -3, paste("downregulated=",down))
-          #    })#output$ComparePlot3
-          #   }#if(input$Reads.EdgeR_DEseq == "EdgeR")
           
-           #grid.arrange(p1, p2, ncol = 2, nrow = 2)
+
+	    #save(list = c("Plot_smear_Plot"), file=paste(Backup_Session_Folder,"/ComparePlot3.rdata",sep=""))  
 
   
-           print("CHECK3")
            ## Heat Map
            
            FC2_table <- FC2_table[!duplicated(FC2_table$symbol),] #remove duplicated genes from table
@@ -4253,7 +4499,6 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            
            #FC2_table <- FC2_table[,3:(length(experimentGroup)+2)]
            
-           print("CHECK4")
 
 
 	  #Creates table with only two columns if user selects to show heatmap with only Compared columns           
@@ -4262,7 +4507,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 	  	FC2_table <- FC2_table[,which(colnames(FC2_table) %in% c(Sample1,Sample2))]
  	  }
 
-
+          shinyjs::show(id = "ComparePlot4_div")
           output$ComparePlot4 = renderPlot({
 
           if(input$Reads.Heatmap_Samples != "Compared Samples"){
@@ -4303,7 +4548,8 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            
              if(length(FC2_table[,1])>=2)
              {
-		output$ComparePlot4 = renderPlot({
+               shinyjs::show(id = "ComparePlot4_div")
+               output$ComparePlot4 = renderPlot({
                #pheatmap(log2(FC2_table + 1), cluster_cols = FALSE, cluster_rows = TRUE, scale = "row", cellwidth = 15, fontsize_row = 4, main = paste(mainTitle,"Norm. Exp. of Genes\nlog2(rpkm+1)"))
                
                		FC2_table.melted = melt(data.frame(Gene=rownames(FC2_table),FC2_table),id.vars = c("Gene"))
@@ -4327,7 +4573,9 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 			HM.Reads.plot = grid.arrange(HM.Reads,layout_matrix = rbind(PLOT_WIDTH))			
 
 			Report.List.Reads <<- c(Report.List.Reads,list(HM.Reads.plot))
-                        HM.Reads.plot
+			HM.Reads.plot_ComparePlot4 = HM.Reads.plot
+			save(list = c("HM.Reads.plot_ComparePlot4"), file=paste(Backup_Session_Folder,"/HM.Reads.plot_ComparePlot4.rdata",sep=""))   
+                       HM.Reads.plot
 
 		})#output$ComparePlot4
              }#if(length(FC2_table[,1])>=2)
@@ -4336,7 +4584,9 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            
            if(length(FC2_table[,1])>100){
              #output$ComparePlot5 = renderPlot( pheatmap(log2(FC2_table[1:50,] + 1), cluster_cols = FALSE, cluster_rows = F, scale = "row", cellwidth = 15, fontsize_row = 4, main = paste(mainTitle,"Norm. Exp. of Genes\nlog2(rpkm+1) - Top 50 genes ranked")))
-	     output$ComparePlot5 = renderPlot({
+
+             shinyjs::show(id = "ComparePlot5_div")
+             output$ComparePlot5 = renderPlot({
                         FC2_table.melted = melt(data.frame(Gene=rownames(FC2_table[1:50,]),FC2_table[1:50,]),id.vars = c("Gene"))
 
                         colnames(FC2_table.melted) = c("Gene","Sample","Expression")
@@ -4358,13 +4608,15 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
                         HM.Reads.50.plot = grid.arrange(HM.Reads.50,layout_matrix = rbind(PLOT_WIDTH))
  
 			Report.List.Reads <<- c(Report.List.Reads,list(HM.Reads.50.plot))
+			save(list = c("HM.Reads.50.plot"), file=paste(Backup_Session_Folder,"/HM.Reads.50.plot.rdata",sep=""))  
 			HM.Reads.50.plot
 
                })#output$ComparePlot5
              #output$ComparePlot6 = renderPlot(pheatmap(log2(FC2_table[1:50,] + 1), cluster_cols = FALSE, cluster_rows = T, scale = "row", cellwidth = 15, fontsize_row = 4, main = paste(mainTitle,"Norm. Exp. of Genes\nlog2(rpkm+1) - Top 50 genes clustered")))
              #output$ComparePlot7 = renderPlot(pheatmap(log2(FC2_table[1:100,] + 1), cluster_cols = FALSE, cluster_rows = F, scale = "row", cellwidth = 15, fontsize_row = 4, main = paste(mainTitle,"Norm. Exp. of Genes\nlog2(rpkm+1) - Top 100 genes ranked")))
 
-             output$ComparePlot6 = renderPlot({
+                        shinyjs::show(id = "ComparePlot6_div")
+                        output$ComparePlot6 = renderPlot({
                         FC2_table.melted = melt(data.frame(Gene=rownames(FC2_table[1:100,]),FC2_table[1:100,]),id.vars = c("Gene"))
 
                         colnames(FC2_table.melted) = c("Gene","Sample","Expression")
@@ -4386,6 +4638,9 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
                         HM.Reads.100.plot = grid.arrange(HM.Reads.100,layout_matrix = rbind(PLOT_WIDTH))
 
                         Report.List.Reads <<- c(Report.List.Reads,list(HM.Reads.100.plot))
+
+			save(list = c("HM.Reads.100.plot"), file=paste(Backup_Session_Folder,"/HM.Reads.100.plot.rdata",sep=""))
+
                         HM.Reads.100.plot
                })#output$ComparePlot6
 
@@ -4755,35 +5010,49 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
            if (numGenes > 0) { #check to make sure there is any differential expression
              
           
-             MIN.dim = min(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
-             MAX.dim = max(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
+             Group.Compare_MIN.dim = min(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
+             Group.Compare_MAX.dim = max(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]),log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]))
             
-             
+            
+	     
+ 
              ##################
-             output$Groups.ComparePlot1 = renderPlotly({ 
+             ##output$Groups.ComparePlot1 = renderPlotly({ 
                #######
                #######
-               Point_Colors = rep("blue",nrow(pengRPKMTable))
+               Group.Compare_Point_Colors = rep("blue",nrow(pengRPKMTable))
                Abs.Log2FC = abs(log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]/pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]))
-               Point_Colors[which(Abs.Log2FC>=thresholdRatio)] = "red"
+               Group.Compare_Point_Colors[which(Abs.Log2FC>=thresholdRatio)] = "red"
                
-               m <- list(
+               Group.Compare_m <- list(
                  l = 50,
                  r = 50,
                  b = 100,
                  t = 100,
                  pad = 4
                )
-               plot_ly(x=log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)]+1),y=log2(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)]+1),
-                       text = paste(rownames(pengRPKMTable),paste(Sample1,round(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample1)],2),sep=": "),paste(Sample2,round(pengRPKMTable[,which(colnames(pengRPKMTable)==Sample2)],2),sep=": "),sep="\n"),
-                       marker = list(color = Point_Colors,size=3)
+
+
+	      Group.CompareTable1 = pengRPKMTable[,c(Sample1,Sample2)]
+
+	   #########################   
+	      shinyjs::show(id = "Groups.ComparePlot1_div")
+ 	      output$Groups.ComparePlot1 = renderPlotly({ 
+		#########
+		#########
+               plot_ly(x=log2(Group.CompareTable1[,1]+1),y=log2(Group.CompareTable1[,2]+1),
+                       text = paste(rownames(Group.CompareTable1),paste(colnames(Group.CompareTable1)[1],round(Group.CompareTable1[,1],2),sep=": "),paste(colnames(Group.CompareTable1)[2],round(Group.CompareTable1[,2],2),sep=": "),sep="\n"),
+                       marker = list(color = Group.Compare_Point_Colors,size=3)
                       ) %>%
-                 layout(autosize = F, width = 500, height = 500, margin = m) %>%
-                 layout(xaxis = list(title = paste(Sample1,"log2(RPKM)"),range=c(MIN.dim,MAX.dim)),yaxis = list(title = paste(Sample2,"log2(RPKM)"), range=c(MIN.dim,MAX.dim)))
+                 layout(autosize = F, width = 500, height = 500, margin = Group.Compare_m) %>%
+                 layout(xaxis = list(title = paste(colnames(Group.CompareTable1)[1],"log2(RPKM)"),range=c(Group.Compare_MIN.dim,Group.Compare_MAX.dim)),yaxis = list(title = paste(colnames(Group.CompareTable1)[2],"log2(RPKM)"), range=c(Group.Compare_MIN.dim,Group.Compare_MAX.dim)))
                
              })#output$Groups.ComparePlot1 = renderPlotly({ 
              
-                     
+		            
+            save(list = c("Group.CompareTable1","Group.Compare_MIN.dim","Group.Compare_MIN.dim","Group.Compare_m","Group.Compare_Point_Colors"), file=paste(Backup_Session_Folder,"/Group.ComparePlot1_Table.rdata",sep=""))
+
+         
              topGenes <- topTags(comparison, n = numGenes) #top genes
              
              allGenes <- topTags(comparison, n = nrow(comparisonTable)) #all genes
@@ -4819,13 +5088,15 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
                #geom_text(data = FC2_table, aes(x = logFC, y = -log10(PValue + 1e-300)), label = rownames(FC2_table), color = "firebrick", size = 2, nudge_y = -1) #label the diff. expr. points
                geom_text(data = FC2_table[1:ifelse(input$Groups.Reads.Volcano_Genes < nrow(FC2_table),input$Groups.Reads.Volcano_Genes,nrow(FC2_table)),], aes(x = logFC, y = -log10(PValue + 1e-300)), label = rownames(FC2_table)[1:ifelse(input$Groups.Reads.Volcano_Genes < nrow(FC2_table),input$Groups.Reads.Volcano_Genes,nrow(FC2_table))], color = "firebrick", size = input$Groups.Reads.Volcano_Font_Size, nudge_y = -0.2) #label the diff. expr. points
 
-
-             output$Groups.ComparePlot2 = renderPlot({
+               shinyjs::show(id = "Groups.ComparePlot2_div")
+               output$Groups.ComparePlot2 = renderPlot({
                
 		PLOT_WIDTH = rep(2:10)
              	PLOT_WIDTH[1:input$Reads.Plot_Widths] = 1
              	Volc.Groups.Reads.plot = grid.arrange(Volc.Groups.Reads,layout_matrix = rbind(PLOT_WIDTH))
              	Report.List.Reads <<- c(Report.List.Reads,list(Volc.Groups.Reads.plot))
+		save(list = c("Volc.Groups.Reads.plot"), file=paste(Backup_Session_Folder,"/Volc.Groups.Reads.plot.rdata",sep=""))
+
              	Volc.Groups.Reads.plot
 		#p1 #must be done to render the image
                 
@@ -4845,14 +5116,29 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
              #label the upregulation region of the graph
              #label the downregulation region of the graph
              
-             output$Groups.ComparePlot3 = renderPlot({
-               {plotSmear(comparison, de.tags = rownames(topGenesTable), main = mainTitle, xlab = xLabel, ylab = yLabel, ylim = c(-5,5), col = "grey")
-                 abline(h=c(-1, 1), col = rep("orange", 2))
-                 abline(v=1, col = "grey")
-                 text(8, 3, paste("upregulated=",up))
-                 text(8, -3, paste("downregulated=",down))
-               }
-             })#output$ComparePlot3
+
+		GC3_comparison = comparison
+		GC3_topGenesTable = topGenesTable
+		GC3_mainTitle = mainTitle
+		GC3_xLabel = xLabel
+		GC3_yLabel = yLabel
+		GC3_up = up
+		GC3_down = down
+
+		shinyjs::show(id = "Groups.ComparePlot3_div")
+		output$Groups.ComparePlot3 = renderPlot({
+
+                 
+		  plotSmear(comparison, de.tags = rownames(topGenesTable), main = mainTitle, xlab = xLabel, ylab = yLabel, ylim = c(-5,5), col = "grey")
+		  abline(h=c(-1, 1), col = rep("orange", 2))
+		  abline(v=1, col = "grey")
+		  text(8, 3, paste("upregulated=",up))
+		  text(8, -3, paste("downregulated=",down))
+		  
+		})#output$ComparePlot3
+
+		save(list = c("GC3_comparison","GC3_topGenesTable","GC3_mainTitle","GC3_xLabel","GC3_yLabel","GC3_up","GC3_down"), file=paste(Backup_Session_Folder,"/plotSmear.Groups.Reads.plot.rdata",sep=""))
+
              #grid.arrange(p1, p2, ncol = 2, nrow = 2)
 #################
              progress$inc(1, detail = "Please Wait: 65%")
@@ -4884,6 +5170,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
                  FC2_table <- FC2_table[,which(colnames(FC2_table) %in% c(Sample1,Sample2))]
              }
               
+             shinyjs::show(id = "Groups.ComparePlot4_div")
              output$Groups.ComparePlot4 = renderPlot({
                if(length(FC2_table[,1])>=2)
 	       {
@@ -4908,13 +5195,17 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
                         HM.Groups.Reads.plot = grid.arrange(HM.Groups.Reads,layout_matrix = rbind(PLOT_WIDTH))
 
                         Report.List.Reads <<- c(Report.List.Reads,list(HM.Groups.Reads.plot))
+			save(list = c("HM.Groups.Reads.plot"), file=paste(Backup_Session_Folder,"/HM.Groups.Reads.plot.rdata",sep=""))
+
                         HM.Groups.Reads.plot
 	       }#f(length(FC2_table[,1])>=2)
-             })#output$ComparePlot4
+             })#output$Groups.ComparePlot4
              
 
 
              if(length(FC2_table[,1])>100){
+               
+               shinyjs::show(id = "Groups.ComparePlot5_div")
                output$Groups.ComparePlot5 = renderPlot({ 
 			FC2_table.melted = melt(data.frame(Gene=rownames(FC2_table[1:50,]),FC2_table[1:50,]),id.vars = c("Gene"))
                         colnames(FC2_table.melted) = c("Gene","Sample","Expression")
@@ -4937,10 +5228,13 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
                         HM.Groups.Reads.plot.50 = grid.arrange(HM.Groups.Reads.50,layout_matrix = rbind(PLOT_WIDTH))
 
                         Report.List.Reads <<- c(Report.List.Reads,list(HM.Groups.Reads.plot.50))
+			save(list = c("HM.Groups.Reads.plot.50"), file=paste(Backup_Session_Folder,"/HM.Groups.Reads.plot.50.rdata",sep=""))
+
                         HM.Groups.Reads.plot.50
 		})# output$Groups.ComparePlot5 = renderPlot({
 
-		output$Groups.ComparePlot6 = renderPlot({
+               shinyjs::show(id = "Groups.ComparePlot6_div")
+               output$Groups.ComparePlot6 = renderPlot({
                         FC2_table.melted = melt(data.frame(Gene=rownames(FC2_table[1:100,]),FC2_table[1:100,]),id.vars = c("Gene"))
                         colnames(FC2_table.melted) = c("Gene","Sample","Expression")
                
@@ -4960,6 +5254,8 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
                         PLOT_WIDTH = rep(2:10)
                         PLOT_WIDTH[1:input$Groups.Reads.Plot_Widths] = 1
                         HM.Groups.Reads.plot.100 = grid.arrange(HM.Groups.Reads.100,layout_matrix = rbind(PLOT_WIDTH))
+
+			save(list = c("HM.Groups.Reads.plot.100"), file=paste(Backup_Session_Folder,"/HM.Groups.Reads.plot.100.rdata",sep=""))
 
                         Report.List.Reads <<- c(Report.List.Reads,list(HM.Groups.Reads.plot.100))
                         HM.Groups.Reads.plot.100
@@ -5147,10 +5443,25 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
    #############################################################
   
 	observeEvent(input$Ontology_Select_Parent,ignoreInit = TRUE,{
- 
- 			GO_ID_info = GO.info[which(GO.info[,2] == gsub("Biological Process - ","",input$Ontology_Select_Parent)),1]	
- 			GO_NAME_List = GO.info[which(GO.info[,1] %in% unlist(strsplit(GO.EXT.hierarchy[grep(paste("^",GO_ID_info,sep=""),GO.EXT.hierarchy)]," "))),2]		
- 			updateSelectInput(session = session,inputId = "Ontology_List",label = "Select GO (Select GO from drop-down list)",choices = GO_NAME_List, selected = NULL)	
+
+  	         if(!exists("GO.info"))
+   		 {
+        	    Existing_Objects = ls()
+       		    load("Data/ROGUE_GO_Workspace.RData")
+     		    New_Objects = setdiff(ls(), Existing_Objects)
+    		    Make_Global_Object_Command = paste(New_Objects,"<<-", New_Objects)
+
+		    for(Command in Make_Global_Object_Command)
+      		    {
+ 	               eval(expr = parse(text = Command))
+     		    }#for(Command in Make_Global_Object_Command)
+
+   		 }#if(!exists("GO.info"))
+
+
+ 		GO_ID_info = GO.info[which(GO.info[,2] == gsub("Biological Process - ","",input$Ontology_Select_Parent)),1]	
+ 		GO_NAME_List = GO.info[which(GO.info[,1] %in% unlist(strsplit(GO.EXT.hierarchy[grep(paste("^",GO_ID_info,sep=""),GO.EXT.hierarchy)]," "))),2]		
+ 		updateSelectInput(session = session,inputId = "Ontology_List",label = "Select GO (Select GO from drop-down list)",choices = GO_NAME_List, selected = NULL)	
  	})#observeEvent(input$Ontology_Select_Parent,ignoreInit = TRUE,{
 
 
@@ -5191,13 +5502,11 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
     #"Groups","Sample"
     if(input$GO_Group_v_Sample == "Samples" & CHECK_DV)
     { 
-    	  print("Samples Selected")
       updateSelectizeInput(session, inputId = "Control_GO_Test",label = "Select Control",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
       updateSelectizeInput(session, inputId = "Subjects_GO_Test",label = "Select Subjects",choices = colnames(DATA.Values)[1:ncol(DATA.Values)], selected = NULL)
     }#if(input$GO_Group_v_Sample == "Samples")
     if(input$GO_Group_v_Sample == "Groups" & exists("Groups"))
     {
-      print("Groups Selected")
       if(Group_Count>0)
       {
         updateSelectizeInput(session, inputId = "Control_GO_Test",label = "Select Control",choices = Groups, selected = NULL)
@@ -5230,7 +5539,7 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
   observeEvent(input$GO_Analysis,ignoreInit = TRUE,{  
     #updateSliderInput(session = session,inputId = "GO_Text_FC_limit",label = "Label absFC Threshold",min = 0,max = 0,value = 0)
     
-    if(length("DATA.Values.5min") <= 1)
+    if(length(DATA.Values.5min) <= 1)
 	{	
 		shinyalert(title = "Data Error",text = "Please load data into the tool", type = "warning")
 		return(NULL)
@@ -5250,6 +5559,22 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 ######
     #######
     ########
+
+
+    if(!exists("GO.info"))
+    {
+           Existing_Objects = ls()
+           load("Data/ROGUE_GO_Workspace.RData")
+           New_Objects = setdiff(ls(), Existing_Objects)
+           Make_Global_Object_Command = paste(New_Objects,"<<-", New_Objects)
+
+           for(Command in Make_Global_Object_Command)
+           {
+                eval(expr = parse(text = Command))
+           }#for(Command in Make_Global_Object_Command)
+
+    }#if(!exists("GO.info"))
+
 
 Fpkm.table.New.txt = c()
 
@@ -5388,7 +5713,6 @@ Fpkm.table.New.txt = c()
           GO_Gene_Lists = c(GO_Gene_Lists,list(FC_LOG2_ALLsets))
      
       
-     	  print(length(GO_expressed_genes.inx.union))
      	  
      	  if(length(GO_expressed_genes.inx.union) >= 2)
      	  {
@@ -5456,8 +5780,8 @@ Fpkm.table.New.txt = c()
       updateSliderInput(session = session,inputId = "GO_Text_FC_limit",label = "Label absFC Threshold",min = 0,max = floor(Largest_FC_Union) ,value = 0,step = 0.1)
       
 
-print("output$GO_FC_Expression")
-      ###################   
+      ###################  
+        shinyjs::show(id = "GO_FC_Expression_div")
         output$GO_FC_Expression <- renderPlot({
       ###################  
           
@@ -5535,8 +5859,8 @@ print("output$GO_FC_Expression")
         ######################
         })# output$GO_FC_Expression
         
-print("output$GO_FC_Expression_Sep")      
       ##############  
+      shinyjs::show(id = "GO_FC_Expression_Sep_div")
       output$GO_FC_Expression_Sep <- renderPlot({
       ##############
         Width_Adjust = input$GO.Graph_Width
@@ -5674,8 +5998,6 @@ print("output$GO_FC_Expression_Sep")
           combined.fpkm.inx = c(Control.fpkm.inx,Test.fpkm.inx)
           
           
-          print("for(i in 1:length(GO.exmp.IDs))")
-          print(length(GO.exmp.IDs))
           for(i in 1:length(GO.exmp.IDs))
           {
             Group.mems.exmp = grep(GO.exmp.IDs[i],substr(GO.EXT.hierarchy,1,10))
@@ -5690,8 +6012,6 @@ print("output$GO_FC_Expression_Sep")
             GO_genes.inx = which(rownames(Fpkm.table.New.txt) %in% GO_genes) 
             FC_LOG2_ALLsets = c()
          
-           print("Line 4433")
-           print(length(GO_genes.inx))
            ALL_GO_expressed_genes.inx = c()
            if(length(GO_genes.inx)>0)
            {
@@ -5729,8 +6049,6 @@ print("output$GO_FC_Expression_Sep")
           }#for(i in 1:length(GO.exmp.IDs))
           
          
-          print("if(length(Group_GO_Values)>0)")
-          print(length(Group_GO_Values))
          if(length(Group_GO_Values)>0)
          {
           Distributions.max.val = max(unlist(Group_GO_Values))
@@ -5768,9 +6086,9 @@ print("output$GO_FC_Expression_Sep")
           
 
 
-print("output$GO_Distribution ")   
           ###############################################  
           ##########
+          shinyjs::show(id = "GO_Distribution_div")
           output$GO_Distribution <- renderPlot({
             ##############
             ########
@@ -5821,9 +6139,9 @@ print("output$GO_Distribution ")
         ##########
         ############
           
-          print("output$GO_Heatmap_rowScale")
           ##################################
             #################################
+          shinyjs::show(id = "GO_Heatmap_rowScale_div")
           output$GO_Heatmap_rowScale <- renderPlotly({
             ############################
             ########################
@@ -5856,37 +6174,36 @@ print("output$GO_Distribution ")
 		}#if(length(Heatmap_gene.inx_List[[i]])>=3)
 	  }#	for(i in 1:length(GO.exmp.IDs)) 
 
-	  print(Heatmaply_TEXT)
-	   print(length(Heatmaply_TEXT))
 	    
 	  if(length(Heatmaply_TEXT) > 1 & length(unique(combined.fpkm.inx)) >= 2 )
 	  {
 	  	Final_PLOT_Text = paste("subplot(",paste(Heatmaply_TEXT,collapse = ","),",nrows = ceiling(length(Heatmaply_TEXT)/3), titleX = T, shareY = F, shareX = F)")
-	    print(Final_PLOT_Text)
 	  	#eval(parse(text=Final_PLOT_Text))
 	  }#if(length(Heatmaply_TEXT) > 1)
 	  if(length(Heatmaply_TEXT) == 1 & length(unique(combined.fpkm.inx)) >= 2 )
 	  {
 	    Final_PLOT_Text = Heatmaply_TEXT 
-	    print(Final_PLOT_Text)
 	    #eval(parse(text=Final_PLOT_Text))
 
 	  }#if(length(Heatmaply_TEXT) == 1)
 	  if(length(Heatmaply_TEXT) == 0 | length(unique(combined.fpkm.inx)) <= 1 )
 	  {
 	  	Final_PLOT_Text  = "heatmaply(matrix(c(0,0,0,0),nrow = 2))"
-	  	print(Final_PLOT_Text)
 	  }#if(length(Heatmaply_TEXT) == 0)
 
-	  eval(parse(text=Final_PLOT_Text))
+	  GO_Heatmap_Final_PLOT_Text_rowScale = Final_PLOT_Text
+
+	  save(list = c("GO_Heatmap_Final_PLOT_Text_rowScale"), file=paste(Backup_Session_Folder,"/GO_Heatmap_FP_rowScale.rdata",sep=""))  
+
+
+	  eval(parse(text= GO_Heatmap_Final_PLOT_Text_rowScale ))
 
 
         })#output$GO_Heatmap_rowScale <- renderPlotly({
         	
         	
    #################################
-   
-   print("output$GO_Heatmap ")
+          shinyjs::show(id = "GO_Heatmap_div")
           output$GO_Heatmap <- renderPlotly({
             ############################
             ########################
@@ -5895,7 +6212,6 @@ print("output$GO_Distribution ")
  #           pheatmap_List = c()
  #           for(i in 1:length(GO.exmp.IDs))
  #           {
- #           		print(length(Heatmap_gene.inx_List[[i]]))
  #           		if(length(Heatmap_gene.inx_List[[i]])>=3)
  #           		{
  #             		GO_Pheatmap = pheatmap(Fpkm.table.New.txt[Heatmap_gene.inx_List[[i]],combined.fpkm.inx],scale="none",fontsize_row = 6*Font_Adjust,show_rownames = T,show_colnames = T,main = #paste(GO.exmp[i],"(",GO.exmp.IDs[i],")",sep="") )
@@ -5924,25 +6240,30 @@ print("output$GO_Distribution ")
 	  if(length(Heatmaply_TEXT) > 1 & length(unique(combined.fpkm.inx)) >= 2 )
 	  {
 	  	Final_PLOT_Text = paste("subplot(",paste(Heatmaply_TEXT,collapse = ","),",nrows = ceiling(length(Heatmaply_TEXT)/3), titleX = T, shareY = F, shareX = F)")
-	    print(Final_PLOT_Text)
 	  	#eval(parse(text=Final_PLOT_Text))
 	  }#if(length(Heatmaply_TEXT) > 1)
 	  if(length(Heatmaply_TEXT) == 1 & length(unique(combined.fpkm.inx)) >= 2 )
 	  {
 	    Final_PLOT_Text = Heatmaply_TEXT 
-	    print(Final_PLOT_Text)
 	    #eval(parse(text=Final_PLOT_Text))
 
 	  }#if(length(Heatmaply_TEXT) == 1)
 
-print("new	")
  	  if(length(Heatmaply_TEXT) == 0 | length(unique(combined.fpkm.inx)) <= 1 )     
 	  {
 	  	Final_PLOT_Text = "heatmaply(matrix(c(0,0,0,0),nrow = 2))"  	
 	  }#if(length(Heatmaply_TEXT) == 0)
 
+
+	  GO_Heatmap_Final_PLOT_Text = Final_PLOT_Text
+
+          save(list = c("GO_Heatmap_Final_PLOT_Text"), file=paste(Backup_Session_Folder,"/GO_Heatmap_FP.rdata",sep=""))
+
+
+          eval(parse(text= GO_Heatmap_Final_PLOT_Text))
+
 	
- 	 eval(parse(text=Final_PLOT_Text))
+ 	 #eval(parse(text=Final_PLOT_Text))
  
  
           })#output$GO_Heatmap <- renderPlot({
@@ -5988,6 +6309,20 @@ print("new	")
     progress$inc(0.1, detail = paste("Progress: ",10,"%",sep=""))
     Sys.sleep(0.001)
     ###############################################  
+   
+    if(!exists("GO.info"))
+    {
+           Existing_Objects = ls()
+           load("Data/ROGUE_GO_Workspace.RData")
+           New_Objects = setdiff(ls(), Existing_Objects)
+           Make_Global_Object_Command = paste(New_Objects,"<<-", New_Objects)
+
+           for(Command in Make_Global_Object_Command)
+           {
+                eval(expr = parse(text = Command))
+           }#for(Command in Make_Global_Object_Command)
+
+    }#if(!exists("GO.info"))
     
     
     GO.info.count <<- GO.info
@@ -6173,8 +6508,8 @@ print("new	")
       if(nrow(GO.count.table) > 0)
       {
         
-     
-          output$Ontology_Barplot <- renderPlot({
+        shinyjs::show(id = "Ontology_Barplot_div")
+        output$Ontology_Barplot <- renderPlot({
             bar_labels = as.character(GO.count.table[,1])
             bar_labels = gsub("_"," ",bar_labels)
             bar_labels = gsub(" ","\n",bar_labels)
@@ -6264,11 +6599,13 @@ print("new	")
 	data$x <- factor(data$x, levels = unique(data$x)[order(data$y, decreasing = TRUE)])
 
 
-	
+	GO_Barplot_data = data
+	GO_Barplot_text = text
 
-        output$Ontology_Barplot_Pvalues <- renderPlotly({
+	shinyjs::show(id = "Ontology_Barplot_Pvalues_div")
+  output$Ontology_Barplot_Pvalues <- renderPlotly({
 
-		plot_ly(data, x = ~x, y = ~y, type = 'bar', text = text,
+		plot_ly(GO_Barplot_data, x = ~x, y = ~y, type = 'bar', text = GO_Barplot_text,
         	     marker = list(color = 'rgb(158,202,225)',
                            line = list(color = 'rgb(8,48,107)',
                                        width = 1.5))) %>%
@@ -6276,12 +6613,12 @@ print("new	")
         	  xaxis = list(title = "GO"),
         	  yaxis = list(title = "-log10 pvalue"))
 
-
-
-
         })#output$Ontology_Barplot_Pvalues
         
+
+	save(list = c("GO_Barplot_data","GO_Barplot_text"), file=paste(Backup_Session_Folder,"/GO_BarPlot.rdata",sep=""))	
  
+
         #updateRadioButtons(session,inputId ="Select_GO",choices = GO.count.table[,1])
         Represented.gene.list = paste(Represented.gene.list,collapse = "\n")
         updateTextAreaInput(session,inputId ="Represented_Genes",label = paste("Represented Genes",sep=""), value=Represented.gene.list)
@@ -6327,7 +6664,22 @@ print("new	")
     Sys.sleep(0.001)
     ############################################### 
     
-    
+
+    if(!exists("GO.info"))
+    {
+           Existing_Objects = ls()
+           load("Data/ROGUE_GO_Workspace.RData")
+           New_Objects = setdiff(ls(), Existing_Objects)
+           Make_Global_Object_Command = paste(New_Objects,"<<-", New_Objects)
+
+           for(Command in Make_Global_Object_Command)
+           {
+                eval(expr = parse(text = Command))
+           }#for(Command in Make_Global_Object_Command)
+
+    }#if(!exists("GO.info"))   
+
+ 
     if(length(GO_Prev_Step) > 0)
     {
       
@@ -6428,7 +6780,7 @@ print("new	")
         
         if(nrow(GO.count.table) > 0)
         {
-          
+          shinyjs::show(id = "Ontology_Barplot_div")
           output$Ontology_Barplot <- renderPlot({
             bar_labels = as.character(GO.count.table[,1])
             bar_labels = gsub("_"," ",bar_labels)
@@ -6587,7 +6939,7 @@ print("new	")
         
         if(nrow(GO.count.table) > 0)
         {
-          
+          shinyjs::show(id = "Ontology_Barplot_div")
           output$Ontology_Barplot <- renderPlot({
             bar_labels = as.character(GO.count.table[,1])
             bar_labels = gsub("_"," ",bar_labels)
@@ -6743,6 +7095,7 @@ print("new	")
           
           if(nrow(GO.count.table) > 0)
           {
+            shinyjs::show(id = "Ontology_Barplot_div")
             output$Ontology_Barplot <- renderPlot({
               bar_labels = as.character(GO.count.table[,1])
               bar_labels = gsub("_"," ",bar_labels)
@@ -6777,7 +7130,7 @@ print("new	")
     ######################################
    ######################
    
-   	if(length("DATA.Values.5min") <= 1)
+   	if(length(DATA.Values.5min) <= 1)
 	{	
 		shinyalert(title = "Data Error",text = "Please load data into the tool", type = "warning")
 		return(NULL)
@@ -7079,7 +7432,7 @@ print("new	")
         B.scale = (New.Data.Subset.tsne.3[,3]-max(New.Data.Subset.tsne.3[,3]))/(min(New.Data.Subset.tsne.3[,3])-max(New.Data.Subset.tsne.3[,3]))
       
         
-        
+        shinyjs::show(id = "Group_Stats_t_SNE_3Dplot_div")
         output$Group_Stats_t_SNE_3Dplot <- renderPlot({
   
              
@@ -7100,7 +7453,7 @@ print("new	")
             	}#if(length(scatter3d.labels>0))
 	    }#if(length(Group_Stat.Gene.Matches) >= 1 & length(which(is.na(Group_Stat.Gene.Matches))))	
           }#if(length(Group_Stat.tSNE.Gene>0))
-        })#output$Group_Stats_t_SNE_3Dplot <- renderPlot({
+        })#output$Group_Stats_t_SNE_3Dplot <- renderPlot
        
         plotlyMargins <- list(
           l = 50,
@@ -7119,6 +7472,7 @@ print("new	")
   	{
 	
 	  #####################
+ 	  shinyjs::show(id = "Group_Stats_t_SNE_3Dplotly_div")
 	  output$Group_Stats_t_SNE_3Dplotly <- renderPlotly({
        	  ###########
        	  ###########
@@ -7148,7 +7502,6 @@ print("new	")
 			for(A in 1:length(Group.Select))
 			{
  				GROUP_Selection = Group.Members[which(Groups == Group.Select[A])]
- 				print(GROUP_Selection)
   				GROUP_Selection_MEMBERS = as.character(unlist(strsplit(as.character(GROUP_Selection),split=";")))
   				GROUPINGS[which(rownames(New.Data.Subset.tsne.3) %in% GROUP_Selection_MEMBERS)] = Group.Select[A]
 			}#for(A in 1:length(Group.Select))
@@ -7157,12 +7510,12 @@ print("new	")
 			rownames(New.Data.Subset.tsne.3.Groups) = rownames(New.Data.Subset.tsne.3)
 			New.Data.Subset.tsne.3.Groups = New.Data.Subset.tsne.3.Groups[which(GROUPINGS!="Ungrouped"),]	
 			GROUPINGS = GROUPINGS[which(GROUPINGS!="Ungrouped")]
-			print(New.Data.Subset.tsne.3.Groups)
             #####################
-            output$Group_Stats_t_SNE_3Dplotly <- renderPlotly({
+			 shinyjs::show(id = "Group_Stats_t_SNE_3Dplotly_div")
+        output$Group_Stats_t_SNE_3Dplotly <- renderPlotly({
             		###########
             		###########
-				set.seed(as.numeric(input$Group_Stats_tSNE_Seed))
+				  set.seed(as.numeric(input$Group_Stats_tSNE_Seed))
 	     		plot_ly(data=New.Data.Subset.tsne.3.Groups,x=~X, y=~Y,z=~Z,text=paste(rownames(New.Data.Subset.tsne.3.Groups)),color=~GROUPINGS,
              	       marker = list(symbol='circle',
                                   sizemode = 'diameter',size=as.numeric(input$Group_Stats_tSNE_pointSize))) %>%
@@ -7174,9 +7527,11 @@ print("new	")
          if(length(input$Group_Stats_tSNE_Group ) == 0)
          {  
          	#####################
-            output$Group_Stats_t_SNE_3Dplotly <- renderPlotly({
-		 		set.seed(as.numeric(input$Group_Stats_tSNE_Seed))
-	     		plot_ly(data=New.Data.Subset.tsne.3,x=~X, y=~Y,z=~Z,text=paste(rownames(New.Data.Subset.tsne.3)),
+           shinyjs::show(id = "Group_Stats_t_SNE_3Dplotly_div")
+          output$Group_Stats_t_SNE_3Dplotly <- renderPlotly({
+            
+            set.seed(as.numeric(input$Group_Stats_tSNE_Seed))
+	     		  plot_ly(data=New.Data.Subset.tsne.3,x=~X, y=~Y,z=~Z,text=paste(rownames(New.Data.Subset.tsne.3)),
                 		    marker = list(color = rgb(R.scale,G.scale,B.scale),
                                   symbol='circle',
                                   sizemode = 'diameter',size=as.numeric(input$Group_Stats_tSNE_pointSize))) %>%
@@ -7188,7 +7543,6 @@ print("new	")
 
 	  }#if(TSNE_TYPE == "SAMPLES")
 
-        ###})#output$Group_Stats_t_SNE_3Dplotly <- renderPlotly({
         #####################
         
         if(length(Group_Stat.tSNE.Gene>0))
@@ -7204,6 +7558,7 @@ print("new	")
 
   	    if(TSNE_TYPE == "GENES")
             {
+  	          shinyjs::show(id = "Group_Stats_t_SNE_3Dplotly_div")
               output$Group_Stats_t_SNE_3Dplotly <- renderPlotly({
               ##########
               ##########
@@ -7216,17 +7571,19 @@ print("new	")
                   add_text(x = scatter3d.labels.coords[,1],y = scatter3d.labels.coords[,2],z = scatter3d.labels.coords[,3],text = scatter3d.labels, textposition = "bottom",inherit = T) %>%
                   add_markers() 
 		
-		})#output$Group_Stats_t_SNE_3Dplotly
-	       }#if(TSNE_TYPE == "GENES")
+		
+                })#output$Group_Stats_t_SNE_3Dplotly
+              }#if(TSNE_TYPE == "GENES")
 
 	       if(TSNE_TYPE == "SAMPLES")
 	       {
 
-		output$Group_Stats_t_SNE_3Dplotly <- renderPlotly({
+	         shinyjs::show(id = "Group_Stats_t_SNE_3Dplotly_div")
+	         output$Group_Stats_t_SNE_3Dplotly <- renderPlotly({
                 ##########
                 ##########
-		set.seed(as.numeric(input$Group_Stats_tSNE_Seed))
-		plot_ly(data=New.Data.Subset.tsne.3,x=~X, y=~Y,z=~Z,text=paste(rownames(New.Data.Subset.tsne.3)),
+	           set.seed(as.numeric(input$Group_Stats_tSNE_Seed))
+	           plot_ly(data=New.Data.Subset.tsne.3,x=~X, y=~Y,z=~Z,text=paste(rownames(New.Data.Subset.tsne.3)),
                       marker = list(color = rgb(R.scale,G.scale,B.scale),
                                     symbol='circle',
                                     sizemode = 'diameter',size=2))  %>%
@@ -7246,7 +7603,8 @@ print("new	")
 	  {
 
 		####################
-          	output$Group_Stats_t_SNE_plotly <- renderPlotly({
+  	    shinyjs::show(id = "Group_Stats_t_SNE_plotly_div")
+  	    output$Group_Stats_t_SNE_plotly <- renderPlotly({
             	############
             	############
             		set.seed(as.numeric(input$Group_Stats_tSNE_Seed))
@@ -7260,7 +7618,8 @@ print("new	")
 	   if(TSNE_TYPE == "SAMPLES")
 	   {
 		####################
-		output$Group_Stats_t_SNE_plotly <- renderPlotly({
+	     shinyjs::show(id = "Group_Stats_t_SNE_plotly_div")
+	     output$Group_Stats_t_SNE_plotly <- renderPlotly({
 		############
 			 set.seed(as.numeric(input$Group_Stats_tSNE_Seed))
 		     plot_ly(data=New.Data.Subset.tsne.2,x=~X, y=~Y,text=paste(rownames(New.Data.Subset.tsne.2)),marker = list(color = rgb(R.scale,G.scale,B.scale))) %>%
@@ -7282,7 +7641,8 @@ print("new	")
 	      if(TSNE_TYPE == "GENES")
 	      {
 		#########################
-		output$Group_Stats_t_SNE_plotly <- renderPlotly({
+	        shinyjs::show(id = "Group_Stats_t_SNE_plotly_div")
+	        output$Group_Stats_t_SNE_plotly <- renderPlotly({
 		##########
 				set.seed(as.numeric(input$Group_Stats_tSNE_Seed))
               	plot_ly(data=New.Data.Subset.tsne.2,x=~X, y=~Y,text=paste(rownames(New.Data.Subset.tsne.2),paste(Control.Label,Expr_Levels.1,sep=": "),paste(Treatment.Label,Expr_Levels.2,sep=": "),sep="\n"),marker = list(color = rgb(R.scale,G.scale,B.scale,sig.val.count.norm)))  %>%
@@ -7296,6 +7656,7 @@ print("new	")
               if(TSNE_TYPE == "SAMPLES")
               {
                 #########################
+                shinyjs::show(id = "Group_Stats_t_SNE_plotly_div")
                 output$Group_Stats_t_SNE_plotly <- renderPlotly({
                 ##########
 				set.seed(as.numeric(input$Group_Stats_tSNE_Seed))
@@ -7394,8 +7755,28 @@ print("new	")
           updateTextAreaInput(session, inputId = "Group_Stats_t_SNE_3DGeneList",value = t_SNE_3DdataContent)
         }#if(length(List1_3D)>0)
   
-       }#if(GENERATE_LIST_Check)
         
+        input_Group_Stats_tSNE_pointSize = input$Group_Stats_tSNE_pointSize
+
+	if(exists("New.Data.Subset.tsne.3") & exists(R.scale))
+	{
+		save(list = c("New.Data.Subset.tsne","R.scale","G.scale","B.scale","plotlyMargins","sig.val.count.norm","input_Group_Stats_tSNE_pointSize"), file=paste(Backup_Session_Folder,"/tsne.3d.rdata",sep=""))  
+	}## if(exists("New.Data.Subset.tsne.3") & exists(R.scale))
+
+        if(exists("New.Data.Subset.tsne.2") & exists(R.scale))
+        {
+                save(list = c("New.Data.Subset.tsne","R.scale","G.scale","B.scale","plotlyMargins","input_Group_Stats_tSNE_pointSize"), file=paste(Backup_Session_Folder,"/tsne.2d.rdata",sep=""))
+        }## if(exists("New.Data.Subset.tsne.3") & exists(R.scale))
+
+
+	if(exists("New.Data.Subset.tsne.3.Groups"))
+        {
+                save(list = c("New.Data.Subset.tsne.3.Groups","plotlyMargins","input_Group_Stats_tSNE_pointSize"), file=paste(Backup_Session_Folder,"/tsne.3d.rdata",sep="")) 
+        }## if(exists("New.Data.Subset.tsne.3.Groups"))
+
+       }#if(GENERATE_LIST_Check)
+
+ 
       }#if(length(Control.Treatment.data.5.inx)>=2)
     }##if(nrow(DATA.Values.5min)>10)
   ##########################################################
@@ -7414,7 +7795,7 @@ print("new	")
     #####################################  
     #####################
     
-    if(length("DATA.Values.5min") <= 1)
+    if(length(DATA.Values.5min) <= 1)
 	{	
 		shinyalert(title = "Data Error",text = "Please load data into the tool and create groups", type = "warning")
 		return(NULL)
@@ -7484,14 +7865,26 @@ print("new	")
       )
       MIN.dim = min(log2(apply(Control.data, MARGIN = 1, function(x) median(x))),log2(apply(Treatment.data, MARGIN = 1, function(x) median(x))))
       MAX.dim = max(log2(apply(Control.data, MARGIN = 1, function(x) median(x))),log2(apply(Treatment.data, MARGIN = 1, function(x) median(x))))
-      
+     
+      Group_Stats_X = log2(apply(Control.data, MARGIN = 1, function(x) median(x)))
+      Group_Stats_Y = log2(apply(Treatment.data, MARGIN = 1, function(x) median(x))) 
+      Group_Stats_Text = Gene_Names
+      Group_Stats_Margins = plotlyMargins
+      Group_Stats_xTitle = paste(Control.Label,"log2(Expression)")
+      Group_Stats_yTitle = paste(Treatment.Label,"log2(Expression)")
+      Group_Stats_MIN.dim = MIN.dim
+      Group_Stats_MAX.dim = MAX.dim
+
+      shinyjs::show(id = "Group_Stats_log2RPKM_div")
       output$Group_Stats_log2RPKM <- renderPlotly({
-        plot_ly(x=log2(apply(Control.data, MARGIN = 1, function(x) median(x))),y=log2(apply(Treatment.data, MARGIN = 1, function(x) median(x))),text = Gene_Names) %>%
-          layout(autosize = F, width = 600, height = 600, margin = plotlyMargins ,showlegend = FALSE,xaxis = list(title = paste(Control.Label,"log2(Expression)"),range=c(MIN.dim,MAX.dim)),yaxis = list(title = paste(Treatment.Label,"log2(Expression)"),range=c(MIN.dim,MAX.dim)))
+        plot_ly(x=Group_Stats_X,y=Group_Stats_Y,text = Group_Stats_Text) %>%
+          layout(autosize = F, width = 600, height = 600, margin = Group_Stats_Margins ,showlegend = FALSE,xaxis = list(title = Group_Stats_xTitle, range=c(Group_Stats_MIN.dim,Group_Stats_MAX.dim)),yaxis = list(title = Group_Stats_yTitle,range=c(Group_Stats_MIN.dim,Group_Stats_MAX.dim)))
       
       })#output$Group_Stats_log2RPKM <- renderPlotly({
       
-      
+      save(list = c("Group_Stats_X","Group_Stats_Y","Group_Stats_Text","Group_Stats_Margins","Group_Stats_xTitle","Group_Stats_yTitle","Group_Stats_MIN.dim","Group_Stats_MAX.dim"), file=paste(Backup_Session_Folder,"/Group_Stats_log2RPKM.rdata",sep=""))  
+
+       
       Pval.Set.Scores = matrix(nrow=nrow(Control.data),ncol=4)
       NORM.score = c()
       Med.fc.score = c()
@@ -7565,6 +7958,7 @@ print("new	")
         
         #########################
         ########################
+        shinyjs::show(id = "Group_Stats_Scatter_Boxplot_div")
         output$Group_Stats_Scatter_Boxplot <- renderPlot({
           ###################
           PLot_Count = min(as.numeric(as.matrix(Group_Stat.Top.Graphs)),length(g.indx),20)
@@ -7585,6 +7979,19 @@ print("new	")
                 plot.coords[h,2] = Treatment.data[g,k]
               }#for(k in 1:ncol(Treatment.data))
             }#for(j in 1:ncol(Control.data))
+            
+            GSSP_Gene_Names = Gene_Names[g]
+            GSSP_Control.Label = Control.Label
+            GSSP_Treatment.Label = Treatment.Label
+            GSSP_Control.data = Control.data[g,]
+            GSSP_Treatment.data = Treatment.data[g,]
+            GSSP_Control.Label.bp = Control.Label.bp
+            GSSP_Treatment.Label.bp = Treatment.Label.bp
+            GSSP_PLot_Count = PLot_Count 
+            GSSP_plot.coords = plot.coords
+            
+            save(list = c("GSSP_plot.coords","GSSP_Gene_Names","GSSP_Control.Label","GSSP_Treatment.Label","GSSP_Control.data","GSSP_Treatment.data","GSSP_Control.Label.bp","GSSP_Treatment.Label.bp","GSSP_PLot_Count"), file=paste(Backup_Session_Folder,"/Group_Stats_Scatter_Boxplot.rdata",sep=""))  
+            
             plot(plot.coords,xlim=c(min(plot.coords),max(plot.coords)),ylim=c(min(plot.coords),max(plot.coords)),pch=16,cex=0.75,main=Gene_Names[g],xlab = Control.Label,ylab = Treatment.Label,cex.lab=0.7)
             lines(rbind(c((min(plot.coords)-5),(min(plot.coords)-5)),c((max(plot.coords)+5),(max(plot.coords)+5))),lty=2)
             boxplot(unlist(Control.data[g,]),unlist(Treatment.data[g,]), main=Gene_Names[g],names=c(Control.Label.bp,Treatment.Label.bp),las=2,ylab="Expression",cex.axis=0.7)
@@ -7629,12 +8036,19 @@ print("new	")
         
         #########################
         ########################
+        shinyjs::show(id = "Group_Stat_Gene_FC_div")
         output$Group_Stat_Gene_FC <- renderPlot({
           ###################
           barplot(abs(Gene_Names.table[,2]),names=Gene_Names.table[,1],las=2,cex.names=lab.size,ylab="abs(Log2 FC)",col=c("grey","blue"))
         })#output$Group_Stat_Gene_FC <- renderPlot({
         #########################
         ########################
+        
+        Group_Stat_Gene_FC_table = Gene_Names.table
+        GSFC_lab.size = lab.size
+        
+        save(list = c("Group_Stat_Gene_FC_table","GSFC_lab.size"), file=paste(Backup_Session_Folder,"/Group_Stat_Gene_FC.rdata",sep=""))  
+        
         #dev.off()
       }#if(length(g.indx)>=1)
       
@@ -7791,9 +8205,25 @@ print("new	")
     #######
     ########
 
+    if(!exists("GO.info"))
+    {
+           Existing_Objects = ls()
+           load("Data/ROGUE_GO_Workspace.RData")
+           New_Objects = setdiff(ls(), Existing_Objects)
+           Make_Global_Object_Command = paste(New_Objects,"<<-", New_Objects)
+
+           for(Command in Make_Global_Object_Command)
+           {
+                eval(expr = parse(text = Command))
+           }#for(Command in Make_Global_Object_Command)
+
+    }#if(!exists("GO.info"))
+
+
+
 Fpkm.table.New.txt = c()
 
-	if(length("DATA.Values.5min") <= 1)
+	if(length(DATA.Values.5min) <= 1)
 	{
 		shinyalert(title = "Data Error",text = "Please load data into the tool", type = "warning")
 
@@ -7866,10 +8296,7 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
   		colnames(Gene_Set_Compare) = c("Gene", Control.fpkm, Test.fpkm)
   		
   		
-  		#print(Gene_Set_Compare[1:3,1:3])
 
-		print(GO_Shortlist)
-		#print(paste(nrow(Fpkm.table.New.txt), ncol(Fpkm.table.New.txt)))
   
   		GO.Pval.analysis.Pathway = sapply(GO_Shortlist, function(X){
 	
@@ -7895,7 +8322,6 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 		progress$inc(0.5, detail = paste("Progress: ",30,"%",sep=""))
     	Sys.sleep(0.001)
 
-		print(GO.Pval.analysis.Pathway)
 
     	GO.Pval.analysis.Pathway[,which(GO.Pval.analysis.Pathway[1,]<=0.2)]
 
@@ -7908,7 +8334,6 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 		HITS = GO.info$GO.Names[which(GO.info$GO.IDs %in% GO_Shortlist[GO.Pval.analysis.Pathway.Check])]
 
     
-    	print(HITS)
     
       	if(length(HITS) == 0)
   		{
@@ -7928,9 +8353,8 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 			}#for(A in HITS[5])
 
 	
-			output$DEO_GO_Boxplot <- renderPlotly({
 
-				GGP = ggplot(GO.Pval.analysis.Pathway.Hits.GTable, aes(x=gsub(" ","\n",GO),y=Expression,fill=Sample)) + 
+				DEO_GO_Box_ggp = ggplot(GO.Pval.analysis.Pathway.Hits.GTable, aes(x=gsub(" ","\n",GO),y=Expression,fill=Sample)) + 
   				geom_boxplot()+
   				theme_classic()+
   				theme(axis.text.x = element_text(angle = 0))+
@@ -7939,17 +8363,20 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
   				scale_fill_manual(values=c("firebrick2","dodgerblue4"))
 
 				Report.List.Reads <<- c(Report.List.Reads,list(GGP))
-  				
-  				ggplotly(GGP) %>% layout(boxmode = "group")
+  			
+				shinyjs::show(id = "DEO_GO_Boxplot_div")
+			  output$DEO_GO_Boxplot <- renderPlotly({
+	
+  				ggplotly(DEO_GO_Box_ggp) %>% layout(boxmode = "group")
 
-			})#output$DEO_GO_Boxplot
+			  })#output$DEO_GO_Boxplot
 		
-		
+			save(list = c("DEO_GO_Box_ggp"), file=paste(Backup_Session_Folder,"/DEO_GO_Boxplot.rdata",sep=""))  
 		
 		progress$inc(0.8, detail = paste("Progress: ",30,"%",sep=""))
     	Sys.sleep(0.001)
 		
-		
+    	shinyjs::show(id = "DEO_GO_Distribution_div")
 			output$DEO_GO_Distribution <- renderPlot({
 				
 				unique.GOs = unique(GO.Pval.analysis.Pathway.Hits.GTable$GO)
@@ -7980,24 +8407,33 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 				GList = c(GList,list(legend1))
 
 				Report.List.Reads <<- c(Report.List.Reads,GList)
-
+				
+				DEO_GO_Distribution_GList = GList
+				DEO_GO_Distribution_Graph_Width = input$DEO_GO.Graph_Width
+				
+				save(list = c("DEO_GO_Distribution_GList","DEO_GO_Distribution_Graph_Width"), file=paste(Backup_Session_Folder,"/DEO_GO_Distribution.rdata",sep=""))  
+				
+				
 				do.call("grid.arrange",c(GList,ncol= 5-as.numeric(input$DEO_GO.Graph_Width)))
 			
 			
 			})#output$DEO_GO_Distribution
 			
-			print("C0")
-			output$DEO_GO_Heatmap_rowScale <- renderPlotly({
+			####output$DEO_GO_Heatmap_rowScale <- renderPlotly({
 
 				
   				
-  				fig <- plot_ly(GO.Pval.analysis.Pathway.Hits.GTable, x = ~GO, y = ~Expression, color = ~Sample, type = "box", text = ~gene_symbol,boxpoints = "all", jitter = 0.3,
-               	pointpos = 0)
-				fig %>% layout(boxmode = "group")
+  				DEO_GO_Heatmap_rows <- plot_ly(GO.Pval.analysis.Pathway.Hits.GTable, x = ~GO, y = ~Expression, color = ~Sample, type = "box", text = ~gene_symbol,boxpoints = "all", jitter = 0.3, pointpos = 0)
 				
-				
+  				shinyjs::show(id = "DEO_GO_Heatmap_rowScale_div")
+  				output$DEO_GO_Heatmap_rowScale <- renderPlotly({
+  				  
+  				  DEO_GO_Heatmap_rows %>% layout(boxmode = "group")
+  				  
+  				})#output$DEO_GO_Heatmap_rowScale
 
-			})#output$DEO_GO_Boxplot
+			save(list = c("DEO_GO_Heatmap_rows"), file=paste(Backup_Session_Folder,"/DEO_GO_Heatmap_rowScale.rdata",sep=""))  
+
 			
 			 TEXT_OUTPUT = paste(c(paste(colnames(GO.Pval.analysis.Pathway.Hits.GTable),collapse = "\t"),apply(GO.Pval.analysis.Pathway.Hits.GTable[order(GO.Pval.analysis.Pathway.Hits.GTable$gene_symbol),],MARGIN=1,function(X) paste(X,collapse = "\t"))),collapse = "\n")
 
@@ -8069,7 +8505,24 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
 	observeEvent(input$Run_Enriched_Signatures,ignoreInit = TRUE,{
 
-	if(length("DATA.Values.5min") <= 1)
+	
+	suppressPackageStartupMessages(library(fgsea))
+
+	if(!exists("GSET_HallMark"))
+	{
+		Existing_Objects = ls()
+		load("Data/ROGUE_GSEA_Workspace.RData")
+		New_Objects = setdiff(ls(), Existing_Objects)
+		Make_Global_Object_Command = paste(New_Objects,"<<-", New_Objects)
+
+		for(Command in Make_Global_Object_Command) 
+		{
+			eval(expr = parse(text = Command))
+		}#for(Command in Make_Global_Object_Command)
+
+	}#if(!exists("GSET_HallMark"))
+
+	if(length(DATA.Values.5min) <= 1)
 	{
 		shinyalert(title = "Data Error",text = "Please load data into the tool", type = "warning")
 
@@ -8135,17 +8588,6 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
 			RANK.vals = FC * -log10(Expr.FC.pval)
 			
-			
-			#output$GSEA_PLOT_2 <- renderPlot(
-			#	plotEnrichment(ALL_Lists[["PID_MYC_REPRESS_PATHWAY"]],RANK.vals) + labs(title="PID_MYC_REPRESS_PATHWAY")
-			#)#renderPlot(
-			
-    		#Subject = Gene_Set_Compare$Subject[match(as.character(GENE_Symbol_Ensembl$Gene.Symbol),as.character(Gene_Set_Compare$Gene))]
-			#Query = Gene_Set_Compare$Query[match(GENE_Symbol_Ensembl$Gene.Symbol, Gene_Set_Compare$Gene)]
-			
-			
-			
-			#GSEA_LIST = c("All","hallmark gene sets","positional gene sets","curated gene sets","motif gene sets","computational gene sets","GO gene sets","oncogenic signatures","immunologic signatures")
 			#ALL_Lists = c(Hs.H,Hs.c1,Hs.c2,Hs.c3,Hs.c4,Hs.c5,Hs.c6,Hs.c7)		
 		
 			GSEA_LIST = c("All","hallmark gene sets","positional gene sets","curated gene sets","motif gene sets","computational gene sets","GO gene sets","oncogenic signatures","immunologic signatures")
@@ -8170,20 +8612,29 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 			topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=as.numeric(input$GSEA_BOTTOM_HITS)), pathway]
 			topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
 
-					
-		   	output$GSEA_PLOT_1 <- renderPlot({
-					plot.new()
-					plotGseaTable(ALL_Lists[topPathways], RANK.vals, fgseaRes, 
-              		gseaParam=0.5)
+			shinyjs::show(id = "GSEA_PLOT_1_div")
+			output$GSEA_PLOT_1 <- renderPlot({
+				plot.new()
+				plotGseaTable(ALL_Lists[topPathways], RANK.vals, fgseaRes, gseaParam=0.5)
 			})#renderPlot({
 
+			GSEA_ALL_Lists_topPathways = ALL_Lists[topPathways]
+			GSEA_RANK.vals = RANK.vals
+			GSEA_fgseaRes = fgseaRes 			
+			GSEA_ALL_Lists_topPathwaysUP = ALL_Lists[[topPathwaysUp[1]]]
+			GSEA_topPathwaysUp = topPathwaysUp[1]
+			GSEA_Test.fpkm = Test.fpkm			
+
+			save(list = c("GSEA_ALL_Lists_topPathways","GSEA_RANK.vals","GSEA_fgseaRes","GSEA_ALL_Lists_topPathwaysUP","GSEA_topPathwaysUp","GSEA_Test.fpkm"), file=paste(Backup_Session_Folder,"/GSEA_PLOT_1.rdata",sep=""))
 		
 			updateSelectizeInput(session = session,inputId = "GSEA_GeneSet",label = "Select Gene Set",choices = names(ALL_Lists), selected = topPathwaysUp[1])	
 			
-			
-		    output$GSEA_PLOT_2 <- renderPlot(
+			shinyjs::show(id = "GSEA_PLOT_2_div")
+			output$GSEA_PLOT_2 <- renderPlot(
 				plotEnrichment(ALL_Lists[[topPathwaysUp[1]]],RANK.vals) + labs(title = paste(gsub("_"," ",topPathwaysUp[1]), Test.fpkm,sep="\n"))
 			)#renderPlot(
+
+			
 			
     		#Subject = Gene_Set_Compare$Subject[match(as.character(GENE_Symbol_Ensembl$Gene.Symbol),as.character(Gene_Set_Compare$Gene))]
 			#Query = Gene_Set_Compare$Query[match(GENE_Symbol_Ensembl$Gene.Symbol, Gene_Set_Compare$Gene)]
@@ -8222,53 +8673,68 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 				RANK.vals_sub = FC_sub * -log10(Expr.FC.pval_sub)
     	
     	
-    	  	output$GSEA_Barplot <- renderPlotly({
-
     			
     			#MATRIX = cbind(Subject_EXPR, Query_EXPR) 
-    			MATRIX = data.frame(Genes=GENE_NAMES, Subject = Subject_EXPR,Query = Query_EXPR)
+    			MATRIX_BarPlot = data.frame(Genes=GENE_NAMES, Subject = Subject_EXPR,Query = Query_EXPR)
     			
-    			MATRIX$Genes <- factor(MATRIX$Genes, levels = MATRIX$Genes[order(RANK.vals_sub,decreasing = T)])
+    			MATRIX_BarPlot$Genes <- factor(MATRIX_BarPlot$Genes, levels = MATRIX_BarPlot$Genes[order(RANK.vals_sub,decreasing = T)])
 
 
-				ay <- list(
+				MATRIX_BarPlot_ay <- list(
   					tickfont = list(color = "red"),
   					verlaying = "y",
   					side = "right",
   					title = "second y axis"
 				)
 
-				plot_ly(MATRIX, x = ~Genes, y = ~Subject, type = 'bar', name = Control.fpkm, marker = list(color = 'rgb(49,130,189)')) %>%
-  				add_trace(y = ~Query, name = Test.fpkm, marker = list(color = 'rgb(204,204,204)'), axis = "y2") %>%
-  				layout(yaxis2 = ay,
+				MATRIX_BarPlot_Test.fpkm = Test.fpkm
+				MATRIX_BarPlot_Control.fpkm = Control.fpkm
+
+				shinyjs::show(id = "GSEA_Barplot_div")
+				output$GSEA_Barplot <- renderPlotly({
+				  
+				  plot_ly(MATRIX_BarPlot, x = ~Genes, y = ~Subject, type = 'bar', name = MATRIX_BarPlot_Control.fpkm, marker = list(color = 'rgb(49,130,189)')) %>%
+				    add_trace(y = ~Query, name = MATRIX_BarPlot_Test.fpkm, marker = list(color = 'rgb(204,204,204)'), axis = "y2") %>%
+  				  layout(yaxis2 = MATRIX_BarPlot_ay,
          		xaxis = list(title = "", tickangle = -45),
          			yaxis = list(title = ""),
          		margin = list(b = 100),
          		barmode = 'group')
 
     		})#output$GSEA_Barplot <- renderPlotly({
-    	
-    		output$GSEA_Heatmap <- renderPlotly({
-    			
-    			MATRIX = cbind(Subject_EXPR, Query_EXPR) 
-    			rownames(MATRIX) = GENE_NAMES
-    			colnames(MATRIX) = c(Control.fpkm, Test.fpkm) 
-    			
-    			heatmaply(MATRIX[order(RANK.vals_sub,decreasing = T),],colors =  rev(brewer.pal(nrow(MATRIX),"RdBu")),Rowv = F,Colv=F,scale="row")
+    
+	        save(list = c("MATRIX_BarPlot","MATRIX_BarPlot_Control.fpkm","MATRIX_BarPlot_Test.fpkm","MATRIX_BarPlot_ay"), file=paste(Backup_Session_Folder,"/GSEA_Barplot.rdata",sep=""))
 
-    		})#output$GSEA_Heatmap <- renderPlotly({
-    		
-    		output$GSEA_Heatmap2 <- renderPlotly({
+	
+
+    			GSEA_MATRIX = cbind(Subject_EXPR, Query_EXPR) 
+    			rownames(GSEA_MATRIX) = GENE_NAMES
+    			colnames(GSEA_MATRIX) = c(Control.fpkm, Test.fpkm) 
+    			GSEA_RANK.vals_sub = RANK.vals_sub    		
+
+			shinyjs::show(id = "GSEA_Heatmap_div")
+			output$GSEA_Heatmap <- renderPlotly({	
+
+    			heatmaply(GSEA_MATRIX[order(GSEA_RANK.vals_sub,decreasing = T),],colors =  rev(brewer.pal(nrow(GSEA_MATRIX),"RdBu")),Rowv = F,Colv=F,scale="row")
+
+    	})#output$GSEA_Heatmap <- renderPlotly({
+
+
+    		####output$GSEA_Heatmap2 <- renderPlotly({
     			
-    			MATRIX = cbind(Subject_EXPR, Query_EXPR) 
-    			rownames(MATRIX) = GENE_NAMES
-    			colnames(MATRIX) = c(Control.fpkm, Test.fpkm) 
+    			####MATRIX = cbind(Subject_EXPR, Query_EXPR) 
+    			####rownames(MATRIX) = GENE_NAMES
+    			####colnames(MATRIX) = c(Control.fpkm, Test.fpkm) 
     			
-    			heatmaply(MATRIX[order(RANK.vals_sub,decreasing = T),],colors =  rev(brewer.pal(nrow(MATRIX),"RdBu")),Rowv = F,Colv=F)
+			shinyjs::show(id = "GSEA_Heatmap2_div")
+		output$GSEA_Heatmap2 <- renderPlotly({
+
+    			heatmaply(GSEA_MATRIX[order(GSEA_RANK.vals_sub,decreasing = T),],colors =  rev(brewer.pal(nrow(GSEA_MATRIX),"RdBu")),Rowv = F,Colv=F)
 
     		})#output$GSEA_Heatmap <- renderPlotly({
 	
-			
+
+		save(list = c("GSEA_MATRIX","GSEA_RANK.vals_sub"), file=paste(Backup_Session_Folder,"/GSEA_Heatmaps.rdata",sep=""))			
 
   		}#if(length(Test.fpkm)>0 & length(Control.fpkm)>0 & length(GO_Shortlist)>0)
  
@@ -8285,7 +8751,7 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 #observeEvent(input$Run_GSEA,{
 	observeEvent(input$GSEA_GeneSet,ignoreInit = TRUE,{
 		
-		if(length("DATA.Values.5min") <= 1)
+		if(length(DATA.Values.5min) <= 1)
 		{	
 			shinyalert(title = "Data Error",text = "Please load data into the tool", type = "warning")
 			return(NULL)
@@ -8372,10 +8838,10 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 		
 			updateSliderInput(session = session,inputId = "GSEA_Gene_limit_slider",label = "Select Gene Limit",min = 2,max = length(ALL_Lists[[as.character(input$GSEA_GeneSet)]]) ,value = length(ALL_Lists[[as.character(input$GSEA_GeneSet)]]),step = 1)
 			
-			
-		    output$GSEA_PLOT_2 <- renderPlot(
+			shinyjs::show(id = "GSEA_PLOT_2_div")
+		  output$GSEA_PLOT_2 <- renderPlot(
 		   		plotEnrichment(ALL_Lists[[as.character(input$GSEA_GeneSet)]],RANK.vals) + labs(title = paste(gsub("_"," ",as.character(input$GSEA_GeneSet)), Test.fpkm,sep="\n"))
-		   )#renderPlot(
+		  )#renderPlot(
 			
 			
 			if(length(intersect(as.character(GENE_Symbol_Ensembl$Gene.Symbol),as.character(Gene_Set_Compare$Gene))) > 2)
@@ -8408,8 +8874,8 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
 				RANK.vals_sub = FC_sub * -log10(Expr.FC.pval_sub)
     	
-    	
-    	  	output$GSEA_Barplot <- renderPlotly({
+				shinyjs::show(id = "GSEA_Barplot_div")
+				output$GSEA_Barplot <- renderPlotly({
 
     			
     			#MATRIX = cbind(Subject_EXPR, Query_EXPR) 
@@ -8444,7 +8910,9 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
          		barmode = 'group')
 
     		})#output$GSEA_Barplot <- renderPlotly({
-    	
+    
+				
+				shinyjs::show(id = "GSEA_Heatmap_div")
     		output$GSEA_Heatmap <- renderPlotly({
     			
     			MATRIX = cbind(Subject_EXPR, Query_EXPR) 
@@ -8470,6 +8938,7 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
     		})#output$GSEA_Heatmap <- renderPlotly({
     		
+    		shinyjs::show(id = "GSEA_Heatmap2_div")
     		output$GSEA_Heatmap2 <- renderPlotly({
     			
     			MATRIX = cbind(Subject_EXPR, Query_EXPR) 
@@ -8487,13 +8956,9 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 				 	MATRIX = MATRIX[order(RANK.vals_sub,decreasing = T),]
 				 }#if(input$GSEA_Gene_limit_slider < nrow(MATRIX) & input$GSEA_Gene_limit_slider>2)
     					
-    			
     			heatmaply(MATRIX,colors =  rev(brewer.pal(20,"RdBu")),Rowv = F,Colv=F)
 
     		})#output$GSEA_Heatmap <- renderPlotly({
-    	
-    		
-			
 
   		}#if(length(Test.fpkm)>0 & length(Control.fpkm)>0 & length(GO_Shortlist)>0)
   		
@@ -8618,7 +9083,7 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
 				RANK.vals_sub = FC_sub * -log10(Expr.FC.pval_sub)
     	
-    	
+				shinyjs::show(id = "GSEA_Barplot_div")
     	  	output$GSEA_Barplot <- renderPlotly({
 
     			
@@ -8655,6 +9120,7 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
     		})#output$GSEA_Barplot <- renderPlotly({
     	
+    	  shinyjs::show(id = "GSEA_Heatmap_div")
     		output$GSEA_Heatmap <- renderPlotly({
     			
     			MATRIX = cbind(Subject_EXPR, Query_EXPR) 
@@ -8681,6 +9147,7 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
     		})#output$GSEA_Heatmap <- renderPlotly({
     		
+    		shinyjs::show(id = "GSEA_Heatmap2_div")
     		output$GSEA_Heatmap2 <- renderPlotly({
     			
     			MATRIX = cbind(Subject_EXPR, Query_EXPR) 
@@ -8708,9 +9175,6 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
     		})#output$GSEA_Heatmap <- renderPlotly({
     	
-    		
-			
-
   		}#if(length(Test.fpkm)>0 & length(Control.fpkm)>0 & length(GO_Shortlist)>0)
   		
   	}#if(length(input$GSEA_GeneSet)>0 & input$GSEA_GeneSet != "" & !is.na(input$GSEA_GeneSet)  !is.null(input$GSEA_GeneSet))
@@ -8750,6 +9214,7 @@ progress$inc(0.2, detail = paste("Progress: ",20,"%",sep=""))
 
 
 shinyApp(ui = dashboardPage(title= "ROGUE", dashboardHeader(tags$li(class = "dropdown",
+      tags$script('$(document).on("shiny:sessioninitialized",function(){$.get("https://api.ipify.org", function(response) {Shiny.setInputValue("getIP", response);});})'),	
       tags$style(".main-header {max-height: 75px}"),
       tags$style(".main-header .logo {height: 75px}")
     ),
