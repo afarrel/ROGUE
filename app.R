@@ -133,7 +133,10 @@ fluidRow(column(width=8,shiny::actionButton(inputId='ab1', label="View ROGUE Man
 				   hr(),	
 					menuItem("Session Info", tabName="Session_Info", icon=icon("refresh")),
 				   downloadButton(outputId = "Download_Summary_Plots",label = "Download Report",class = "Download_Report"),
-				  tags$head(tags$style(".Download_Report{background-color:#1A3333;} .Download_Report{color: #1A3333;} .Download_Report{border-color: #1A3333;} .Download_Report{float: center;} "))
+				  tags$head(tags$style(".Download_Report{background-color:#1A3333;} .Download_Report{color: #1A3333;} .Download_Report{border-color: #1A3333;} .Download_Report{float: center;} ")),
+					p(),
+					textOutput(outputId = "Current_Session_ID_Main", inline=T),
+					tags$head(tags$style("#Current_Session_ID_Main{color: grey;font-size: 11px;font-style: italic;}"))
 				  
 				
 												
@@ -266,10 +269,10 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                                 hidden(div(id="MDSPlot_div",shinycssloaders::withSpinner(plotlyOutput("MDSPlot",height = "600px",width = "600px")))),
                                 hidden(div(id="ComparePlot1_div",shinycssloaders::withSpinner(plotlyOutput("ComparePlot1",height = "500px",width = "500px")))),
                                 hidden(div(id="ComparePlot2_div",shinycssloaders::withSpinner(plotOutput("ComparePlot2")))),
-                                hidden(div(id="ComparePlot3_div",shinycssloaders::withSpinner(plotOutput("ComparePlot3")))),
-                                hidden(div(id="ComparePlot4_div",shinycssloaders::withSpinner(plotOutput("ComparePlot4")))),
-                                hidden(div(id="ComparePlot5_div",shinycssloaders::withSpinner(plotOutput("ComparePlot5")))),
-                                hidden(div(id="ComparePlot6_div",shinycssloaders::withSpinner(plotOutput("ComparePlot6")))),
+                                hidden(div(id="ComparePlot3_div",(plotOutput("ComparePlot3")))), #removed shinycssloaders
+                                hidden(div(id="ComparePlot4_div",(plotOutput("ComparePlot4")))), #removed shinycssloaders
+                                hidden(div(id="ComparePlot5_div",(plotOutput("ComparePlot5")))), #removed shinycssloaders
+                                hidden(div(id="ComparePlot6_div",(plotOutput("ComparePlot6")))), #removed shinycssloaders
                                 plotOutput("ComparePlot7"),
                                 plotOutput("ComparePlot8")),
                        tabPanel("GeneLists",
@@ -447,10 +450,10 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                			tabPanel("Summary_plots", 
                			         hidden(div(id="Groups.ComparePlot1_div",shinycssloaders::withSpinner(plotlyOutput("Groups.ComparePlot1",height = "500px",width = "500px")))),
                			         hidden(div(id="Groups.ComparePlot2_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot2")))),
-               			         hidden(div(id="Groups.ComparePlot3_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot3")))),
-               			         hidden(div(id="Groups.ComparePlot4_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot4")))),
-               			         hidden(div(id="Groups.ComparePlot5_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot5")))),
-               			         hidden(div(id="Groups.ComparePlot6_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot6")))),
+               			         hidden(div(id="Groups.ComparePlot3_div",shinycssloaders::withSpinner(plotOutput("Groups.ComparePlot3")))), 
+               			         hidden(div(id="Groups.ComparePlot4_div",(plotOutput("Groups.ComparePlot4")))), #removed shinycssloaders
+               			         hidden(div(id="Groups.ComparePlot5_div",(plotOutput("Groups.ComparePlot5")))), #removed shinycssloaders
+               			         hidden(div(id="Groups.ComparePlot6_div",(plotOutput("Groups.ComparePlot6")))), #removed shinycssloaders
                         	plotOutput("Groups.ComparePlot7"),
                         	plotOutput("Groups.ComparePlot8")),
                			tabPanel("Groups.GeneLists",
@@ -514,9 +517,9 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
 					 textOutput("Single.Sample.barplot.label"),
 					 hidden(div(id="Single.Sample.barplot_div",shinycssloaders::withSpinner(plotOutput("Single.Sample.barplot")))),
 					 textOutput("Single.Sample.heatmap.label"),
-					 hidden(div(id="Single.Sample.heatmap_div",shinycssloaders::withSpinner(plotOutput("Single.Sample.heatmap")))),
+					 hidden(div(id="Single.Sample.heatmap_div",(plotOutput("Single.Sample.heatmap")))),  #removed shinycssloaders
 					 textOutput("MDS_PLOT.Samples.label"),
-					 hidden(div(id="MDS_PLOT.Samples_div",shinycssloaders::withSpinner(plotOutput("MDS_PLOT.Samples"))))
+					 hidden(div(id="MDS_PLOT.Samples_div",(plotOutput("MDS_PLOT.Samples"))))  #removed shinycssloaders
                   
                   )#box(
   		    	)#fluidRow(  
@@ -562,13 +565,13 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
 						textOutput("Group.barplot.label"),
 						hidden(div(id="Group.barplot_div",shinycssloaders::withSpinner(plotOutput("Group.barplot")))),
 						textOutput("Group.barplot.sem.label"),
-						hidden(div(id="Group.barplot.sem_div",shinycssloaders::withSpinner(plotOutput("Group.barplot.sem")))),
+						hidden(div(id="Group.barplot.sem_div",(plotOutput("Group.barplot.sem")))),  #removed shinycssloaders
 						textOutput("Group.heatmap.label"),
-						hidden(div(id="Group.heatmap_div",shinycssloaders::withSpinner(plotOutput("Group.heatmap")))),
+						hidden(div(id="Group.heatmap_div",(plotOutput("Group.heatmap")))),  #removed shinycssloaders
 						textOutput("Group.members.heatmap.label"),
-						hidden(div(id="Group.members.heatmap_div",shinycssloaders::withSpinner(plotOutput("Group.members.heatmap")))),
+						hidden(div(id="Group.members.heatmap_div",(plotOutput("Group.members.heatmap")))),  #removed shinycssloaders
 						textOutput("Group.MDS_PLOT.Samples.label"),
-						hidden(div(id="Group.MDS_PLOT.Samples_div",shinycssloaders::withSpinner(plotOutput("Group.MDS_PLOT.Samples"))))
+						hidden(div(id="Group.MDS_PLOT.Samples_div",(plotOutput("Group.MDS_PLOT.Samples"))))  #removed shinycssloaders
 				  )#box(
   		    	)#fluidRow(
 				),#tabItem(tabName = "Group_Comparison",
@@ -612,12 +615,12 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                       ),#sidebarPanel
                       mainPanel(
                          hidden(div(id="GSEA_PLOT_1_div",shinycssloaders::withSpinner(plotOutput(outputId = "GSEA_PLOT_1")))),
-                         hidden(div(id="GSEA_PLOT_2_div",shinycssloaders::withSpinner(plotOutput(outputId = "GSEA_PLOT_2")))),
+                         hidden(div(id="GSEA_PLOT_2_div",(plotOutput(outputId = "GSEA_PLOT_2")))),  #removed shinycssloaders
                           fluidRow(
                                column(width=5,hidden(div(id="GSEA_Heatmap_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "GSEA_Heatmap"))))),
-                               column(width=5,hidden(div(id="GSEA_Heatmap2_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "GSEA_Heatmap2")))))
+                               column(width=5,hidden(div(id="GSEA_Heatmap2_div",(plotlyOutput(outputId = "GSEA_Heatmap2"))))) # #removed shinycssloaders
                            ),#fluidRow(
-                        hidden(div(id="GSEA_Barplot_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "GSEA_Barplot"))))
+                        hidden(div(id="GSEA_Barplot_div",(plotlyOutput(outputId = "GSEA_Barplot")))) # #removed shinycssloaders
                                      
                         )#mainPanel
 						  )#sidebarLayout
@@ -670,7 +673,7 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                                      
                                 column(width=8,
                                        hidden(div(id="Ontology_Barplot_div",shinycssloaders::withSpinner(plotOutput(outputId = "Ontology_Barplot")))),
-                                       hidden(div(id="Ontology_Barplot_Pvalues_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "Ontology_Barplot_Pvalues"))))
+                                       hidden(div(id="Ontology_Barplot_Pvalues_div",(plotlyOutput(outputId = "Ontology_Barplot_Pvalues"))))  #removed shinycssloaders
                                 ),#column(width=8,
                                 column(width=4,
                                           h5(id = "h4PreviousGOButton",actionLink(inputId = "Previous_GO_Button", label = "Go Back")),
@@ -725,7 +728,7 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
       												
       												hidden(div(id="Group_Stats_log2RPKM_div",shinycssloaders::withSpinner(plotlyOutput("Group_Stats_log2RPKM",height = "600px",width = "600px")))),
       												hidden(div(id="Group_Stats_Scatter_Boxplot_div",shinycssloaders::withSpinner(plotOutput("Group_Stats_Scatter_Boxplot",height = "1000px")))),
-      												hidden(div(id="Group_Stat_Gene_FC_div",shinycssloaders::withSpinner(plotOutput("Group_Stat_Gene_FC")))),
+      												hidden(div(id="Group_Stat_Gene_FC_div",(plotOutput("Group_Stat_Gene_FC")))),  #removed shinycssloaders
 										
       												downloadButton(outputId = "Group_Stat_Download_Graphs", label = "Download All Data")
                            
@@ -760,8 +763,8 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
 												fluidRow(column(width=4,h5(id = "h4GroupStatsTSNEGene", selectizeInput(inputId = "Group_Stats_tSNE_Gene",label = "Highlight Gene (Optional)",choices = c(""), selected = NULL, multiple = T)))),
 												fluidRow(column(width=4,h5(id = "h4GroupStatsTSNEGroup", selectizeInput(inputId = "Group_Stats_tSNE_Group",label = "Highlight Group (Optional)",choices = c(""), selected = NULL, multiple = T)))),
 												hidden(div(id="Group_Stats_t_SNE_3Dplot_div",shinycssloaders::withSpinner(plotOutput(outputId = "Group_Stats_t_SNE_3Dplot")))),
-												hidden(div(id="Group_Stats_t_SNE_3Dplotly_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "Group_Stats_t_SNE_3Dplotly",height = "600px",width = "600px")))),
-												hidden(div(id="Group_Stats_t_SNE_plotly_div",shinycssloaders::withSpinner(plotlyOutput(outputId = "Group_Stats_t_SNE_plotly",height = "600px",width = "600px")))),
+												hidden(div(id="Group_Stats_t_SNE_3Dplotly_div",(plotlyOutput(outputId = "Group_Stats_t_SNE_3Dplotly",height = "600px",width = "600px")))),  #removed shinycssloaders
+												hidden(div(id="Group_Stats_t_SNE_plotly_div",(plotlyOutput(outputId = "Group_Stats_t_SNE_plotly",height = "600px",width = "600px")))),  #removed shinycssloaders
                                                 
 												fluidRow(
 												  column(width=6,textAreaInput(inputId = "Group_Stats_t_SNE_3DGeneList",label = "Similarly Expressed Genes (3D t-SNE)",value="",width = '300px', height='300px')),
@@ -835,12 +838,12 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                        	column(width=3,sliderInput(inputId = "GO.Graph_Width",label = "Graph Width",min = 1,max = 4,value = 4)),
                         column(width=3,sliderInput(inputId = "GO.Font_Size",label = "Font Size",min = 1,max = 4,value = 2)))),
                        hidden(div(id="GO_FC_Expression_div",shinycssloaders::withSpinner(plotOutput("GO_FC_Expression")))),
-                       hidden(div(id="GO_FC_Expression_Sep_div",shinycssloaders::withSpinner(plotOutput("GO_FC_Expression_Sep")))),
-                       hidden(div(id="GO_Distribution_div",shinycssloaders::withSpinner(plotOutput("GO_Distribution")))),
-                       hidden(div(id="GO_Heatmap_rowScale_div",shinycssloaders::withSpinner(plotlyOutput("GO_Heatmap_rowScale",height='600px',width = "1200px")))),
-                       hidden(div(id="Space_hold_div",shinycssloaders::withSpinner(plotOutput("Space_hold",height='200px',width = "200px")))),
-                       hidden(div(id="GO_Heatmap_div",shinycssloaders::withSpinner(plotlyOutput("GO_Heatmap",height='600px',width = "1200px")))),                                                              
-                        textAreaInput(inputId = "GENE_GO_FC_RPKM",label = "GO RPKM Table",value="",width = '800px', height='300px')
+                       hidden(div(id="GO_FC_Expression_Sep_div",(plotOutput("GO_FC_Expression_Sep")))),  #removed shinycssloaders
+                       hidden(div(id="GO_Distribution_div",(plotOutput("GO_Distribution")))),  #removed shinycssloaders
+                       hidden(div(id="GO_Heatmap_rowScale_div",(plotlyOutput("GO_Heatmap_rowScale",height='600px',width = "1200px")))),  #removed shinycssloaders
+                       hidden(div(id="Space_hold_div",(plotOutput("Space_hold",height='200px',width = "200px")))),  #removed shinycssloaders
+                       hidden(div(id="GO_Heatmap_div",(plotlyOutput("GO_Heatmap",height='600px',width = "1200px")))),  #removed shinycssloaders                                                            
+                        textAreaInput(inputId = "GENE_GO_FC_RPKM",label = "GO RPKM Table",value="",width = '800px', height='300px')  
                        )#mainPanel
                      )#sidebarLayout
 				
@@ -897,8 +900,8 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                        		  column(width=3,sliderInput(inputId = "DEO_GO.Graph_Width",label = "Graph Width",min = 1,max = 4,value = 3)),
                             column(width=3,sliderInput(inputId = "DEO_GO.Font_Size",label = "Font Size",min = 1,max = 25,value = 10)))),
                          	 hidden(div(id="DEO_GO_Boxplot_div",shinycssloaders::withSpinner(plotlyOutput("DEO_GO_Boxplot")))),
-                         	 hidden(div(id="DEO_GO_Distribution_div",shinycssloaders::withSpinner( plotOutput("DEO_GO_Distribution")))),
-                         	 hidden(div(id="DEO_GO_Heatmap_rowScale_div",shinycssloaders::withSpinner(plotlyOutput("DEO_GO_Heatmap_rowScale",height='600px',width = "1200px")))),
+                         	 hidden(div(id="DEO_GO_Distribution_div",(plotOutput("DEO_GO_Distribution")))),  #removed shinycssloaders
+                         	 hidden(div(id="DEO_GO_Heatmap_rowScale_div",(plotlyOutput("DEO_GO_Heatmap_rowScale",height='600px',width = "1200px")))),  #removed shinycssloaders
                                #plotOutput("DEO_GO_Heatmap",height='600px',width = "1600px"),                                                              
                                textAreaInput(inputId = "DEO_GENE_GO_FC_RPKM",label = "GO Expression Table",value="",width = '800px', height='300px')
                            )#mainPanel
@@ -918,7 +921,7 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
     tabItem(tabName = "Session_Info",
             fluidRow(
               box(
-                title = p(actionButton("Create_Groups_load_help", "", icon = icon("question"),
+                title = p(actionButton("Session_Info_help", "", icon = icon("question"),
                                        class = "btn-xs", title = "Help"),"Session Info (Restore/Load)"
                           ),#title = p
                 width = 10, solidHeader = TRUE,
@@ -930,7 +933,7 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                   ),#fluidRow
                 p(textOutput(outputId = "Restore_Session_Progress", inline=T)),
                 fluidRow(column(width=5,h5(id="h4UploadSessionFile",fileInput("Upload_Session_File", "Choose 'Session' File (Rdata)"))),
-                         column(width=3,h5(id="h4ConfirmGroup",actionButton(inputId = "Upload_Session",label = "Upload Session")))),
+                         column(width=3,h5(id="h4ConfirmUpload",actionButton(inputId = "Upload_Session",label = "Upload Session")))),
                 fluidRow(column(width=2,h5(id="h4DownloadSession",downloadButton(outputId = "download_Session", label = "Download Session")))),
                 hidden(div(id="session_Wait_plot_div",shinycssloaders::withSpinner(plotOutput("session_Wait_plot"))))
                 )#box
@@ -955,7 +958,7 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
 server <- function(input,output,session,DATA.Values=c(),DATA.Values.5min=c(),Groups=c(),Group.Members=c(),GeneList,Reads.Data_File_path,readData=c(),pengRPKMTable=c(), Group.GTable,Gene.Choices=c(),PRE_GROUPS="",Reads_Reset=F,DATA.Values_Flag=F) {
 
 
-output$Current_Session_ID <- renderText({
+output$Current_Session_ID_Main <- renderText({
     
 	IP_addr <- reactive(input$getIP)
 	IP_addr_Text <- capture.output(IP_addr(),split=F)
@@ -982,7 +985,9 @@ output$Current_Session_ID <- renderText({
 	if(!grepl("NULL",Backup_Session_Folder)) system(paste("mkdir",Backup_Session_Folder))
 	#system(paste("mkdir",Backup_Session_Folder))	
 
-      return(Session_ID)
+	  output$Current_Session_ID <- renderText({Session_ID})
+	  
+      return(paste("\t Session ID:",Session_ID))
   })#output$Current_Session_ID <- renderText
 
 
@@ -1495,6 +1500,20 @@ observeEvent(input$file1,{
   })#observeEvent(input$Diff_Expressed_Ontologies_help,{	
 	
 		
+ observeEvent(input$Session_Info_help,{
+   rintrojs::introjs(session, options = list(
+     steps = data.frame(element = c("#h4Session_ID","#h4Session_ID","#h4Session_ID", "#h4UploadSessionFile","#h4ConfirmUpload","#h4DownloadSession"),
+                        intro = c("Enter the Session ID that you would like to restore.",
+                                  "Each unique session ID consists of the user's IP address, the date, and an iterative number (1,2,3, …).    XXX.XX.XXX.XXX_YYYY.MM.DD_I",
+                                  "For example:     159.17.216.157_2023.01.17_2     (Then press the 'Restore Session' button)",
+                                  "If a session file was downloaded to the computer (rdata), search and upload it.",
+                                  "Confirm the upload and load the data into the app.",
+                                  "Download your session to your local computer. Sessions saved on the server are stored temporarily and will be removed often."
+                                  
+                        ))#steps = data.frame(element = c(
+   ))#rintrojs::introjs(session, options = list(
+ })#observeEvent(input$Session_Info_help,{	
+ 
 		
  observeEvent(input$ROGUE_help,{
       rintrojs::introjs(session, options = list(
@@ -1508,9 +1527,8 @@ observeEvent(input$file1,{
   })#observeEvent(input$Diff_Expressed_Ontologies_help,{	
 	
 				
-		
-		
 
+ 
 		
 	
 #####################################
@@ -4350,7 +4368,20 @@ obs.Edgr.Compare.Conditions.button <- observeEvent(input$CompareButton,ignoreIni
 
 		dds$Treatment <- relevel(dds$Treatment, ref=c(Sample1, Sample2)[1])
 		dds$Treatment <- factor(dds$Treatment, levels=c(Sample1, Sample2))
+		
+		DDS.error.occured <- FALSE
+		tryCatch( {  dds <- DESeq(dds) }
+		          , error = function(e) {DDS.error.occured <<- TRUE})
+		
+		if(DDS.error.occured)
+		{
+		  shinyalert(title = "DESeq2 Error", text="Error in estimateDispersionsFit: all gene-wise dispersion estimates are within 2 orders of magnitude
+  from the minimum value, and so the standard curve fitting techniques will not work. This may be because the samples are technical replicates or very similar biological replicates. Please try EdgeR as the function has a manual overide included to avoid this error.", type = "warning")
+		  return(NULL)
+		}
+				
 		dds <- DESeq(dds)
+		
 		res <- results(dds)
 		resOrdered <- res[order(res$padj),]
 
