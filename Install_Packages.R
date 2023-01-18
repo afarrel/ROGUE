@@ -21,6 +21,7 @@ install.packages("reshape2")
 install.packages("rintrojs")
 install.packages("uwot")
 install.packages("shinyalert")
+install.packages("shinycssloaders")
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
