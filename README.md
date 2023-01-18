@@ -16,7 +16,7 @@ The below packages are required:
 | RColorBrewer|ggplot2|dplyr|Rtsne|scatterplot3d|
 |gridExtra|gtools|colourpicker|grid|cowplot|
 |fgsea  |reshape2|rintrojs|DESeq2|uwot|
-|shinyalert|||||
+|shinyalert|shinycssloaders||||
 
 
 
