@@ -1,0 +1,11 @@
+Sessions are backed up in this folder.
+
+Unique session IDs are generated when the application is started.
+Each unique session ID is created consisting of the IP address, the date, and an iterative number (1,2,3, …).
+For example: 159.17.216.157_2023.01.17_2). 
+
+This way, a user can figure out a session ID and restore a session if it crashes or if a session needs to be resumed at a later time.
+
+When the ID is created, a subfolder is created in this Backup folder labeled with the session ID and data objects from the session are stored in 'rdata' files.
+If you need to restore a session in the app, Go to the 'Session Info' page, enter the session ID in the "Restore Session" field, and click the 'Restore Session' button.
+The 'rdata' objects from the session folder will then be loaded into the app and the session will be restored and also saved in thee current session's folder.
