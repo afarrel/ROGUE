@@ -131,7 +131,7 @@ fluidRow(column(width=8,shiny::actionButton(inputId='ab1', label="View ROGUE Man
 						menuSubItem("Differentially Expressed Ontologies",tabName="Diff_Expressed_Ontologies", icon=icon("line-chart"))
 					),#menuItem("Advanced Analysis",   icon=icon("line-chart"),
 				   hr(),	
-					menuItem("Session Info", tabName="Session_Info", icon=icon("refresh")),
+					menuItem("Restore/Load Session", tabName="Session_Info", icon=icon("refresh")),
 				   downloadButton(outputId = "Download_Summary_Plots",label = "Download Report",class = "Download_Report"),
 				  tags$head(tags$style(".Download_Report{background-color:#1A3333;} .Download_Report{color: #1A3333;} .Download_Report{border-color: #1A3333;} .Download_Report{float: center;} ")),
 					p(),
@@ -965,6 +965,16 @@ output$Current_Session_ID_Main <- renderText({
 	IP_addr_Text_Clean <- gsub("\"|\\[1\\]| ","",IP_addr_Text)
 	DATE = gsub("-",".",Sys.Date())
 
+
+	if(is.null(IP_addr_Text_Clean) | IP_addr_Text_Clean =="NULL" | length(IP_addr_Text_Clean)==0)
+	{
+	  PART2 = round(runif(1,10,99))
+	  PART3 = round(runif(1,100,999))
+	  PART4 = round(runif(1,100,999))
+	  IP_addr_Text_Clean = paste("CUS",PART2,PART3,PART4,sep=".")
+	}
+	  
+	
 	Session_ID_base = paste(as.character(IP_addr_Text_Clean),DATE,sep="_")
 
 	BackedUp_Sessions = system(paste("ls ",Backup.folder,sep=""),intern=T)
