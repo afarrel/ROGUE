@@ -1,0 +1,1 @@
+These Scripts support the thee Restore Session, Download Session, and Restore Session functions.
