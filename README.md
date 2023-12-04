@@ -28,7 +28,7 @@ https://www.r-project.org/
 Note: This Rshiny app is written to be executed on UNIX and Linux. The application will need to be modified to be executed on Windows.
 
 # 2. Download Code
-1. Click on download Code button.
+1. Click on the Code button (top right).
 
 2. Click 'Download ZIP'.
 
