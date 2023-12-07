@@ -223,8 +223,8 @@ body <- dashboardBody(introjsUI(),useShinyjs(),
                       
                       hidden(
                       	div(id = "Sample_Select_Box_wrapper",
-                      		box(id = "Sample_Select_Box", title = "Sample Selection (Max 20)", width = '200px',                      
-    		                  		h5(id="h4Sample_Select_Box", selectizeInput(inputId = "Reads.Library_select",label = "Select Samples",choices = c(""),options = list(maxItems = 20), selected = NULL, multiple = T))
+                      		box(id = "Sample_Select_Box", title = "Sample Selection", width = '200px',                      
+    		                  		h5(id="h4Sample_Select_Box", selectizeInput(inputId = "Reads.Library_select",label = "Select Samples",choices = c(""), selected = NULL, multiple = T))
                       ))),#hidden(div(id = "Sample_Select_Box_wrapper"
                       
                       hidden(
