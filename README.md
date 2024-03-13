@@ -1,7 +1,7 @@
 # ROGUE
 RNAseq &amp; Ontology Graphic User Environment
 
-ROGUE (RNA-seq Ontology Graphic User Environment), is an R Shiny application that allows biologists to perform differentially expressed gene analysis, gene ontology and pathway enrichment analysis, potential biomarker identification, and advanced statistical analyses. 
+ROGUE (RNA-seq Ontology Graphic User Environment), is an R Shiny application that allows biologists to perform differentially expressed gene analysis, gene ontology and pathway enrichment analysis, potential biomarker identification, and advance  statistical analyses. 
 
 **Notes:**
 
